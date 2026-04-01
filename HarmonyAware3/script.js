@@ -49,19 +49,22 @@ let ransomStrips = [];
 // ============================================================
 // BACKGROUND STAR FIELD MOTIF
 // ============================================================
+// Generate a dense, center-biased field of 150 stars
 const bgStars = [];
-// Generate a dense field of 70 overlapping stars
-for (let i = 0; i < 70; i++) {
+for (let i = 0; i < 150; i++) {
+    // Bias positions slightly closer to the center instead of a pure random square
+    const dist = Math.pow(Math.random(), 0.8) * 1800; 
+    const angle = Math.random() * Math.PI * 2;
+    
     bgStars.push({
-        x: (Math.random() - 0.5) * 3000, 
-        y: (Math.random() - 0.5) * 3000,
-        r: 80 + Math.random() * 350, // Varying massive and medium sizes
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        r: 50 + Math.random() * 200, // Slightly smaller max radius to prevent overlapping clutter
         angle: Math.random() * Math.PI * 2,
         speed: (Math.random() - 0.5) * 0.005,
-        colorVariant: Math.random()
+        colorVariant: Math.random() 
     });
 }
-
 class RansomStrip {
     constructor(cx, cy, bassIntensity) {
         this.x = cx + (Math.random() - 0.5) * canvas.width * 0.8;
@@ -271,46 +274,51 @@ function renderBackgroundStars() {
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     
-    // Solid base color
+    // Solid base color to wipe the frame
     ctx.fillStyle = COLOR_BLACK;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
     ctx.translate(cx, cy);
     
-    // UI CONTROL: Rotation
+    // UI CONTROL: Master Rotation
     const rotVal = ctrlRotation ? parseFloat(ctrlRotation.value) : 0.5;
-    ctx.rotate((time * 0.05 * rotVal) + (bassEnergy * 0.05)); 
-// We drop beatTimer and use midEnergy for vocals.
-    // The threshold (0.4) might need tweaking depending on how loud the singer is in your specific track.
-    const isVocalActive = midEnergy > 0.4; 
+    
+    // FIX 1: Removed the jarring bassEnergy jitter. 
+    // The starfield now drifts smoothly and constantly.
+    ctx.rotate(time * 0.02 * rotVal); 
+// Allow the shockwave to travel much further (exponent lowered to 1.2, multiplier raised to 2500)
+    const shockwaveRadius = Math.pow(midEnergy, 1.2) * 2500; 
 
     for (let i = 0; i < bgStars.length; i++) {
         let s = bgStars[i];
         
-        // Slowly spin each individual star
         s.angle += s.speed * rotVal;
 
         ctx.save();
         ctx.translate(s.x, s.y);
         ctx.rotate(s.angle);
 
-        let fillColor = COLOR_BLACK;
-        if (s.colorVariant > 0.8) {
-            // Flash RED when vocals hit
-            fillColor = isVocalActive ? COLOR_RED : COLOR_MID_GREY;
-        } else if (s.colorVariant > 0.5) {
-            // Flash WHITE when vocals hit
-            fillColor = isVocalActive ? COLOR_WHITE : COLOR_DARK_GREY;
+        const distFromCenter = Math.hypot(s.x, s.y);
+        const isShocked = (distFromCenter < shockwaveRadius) && (midEnergy > 0.1);
+
+        // CRITICAL FIX: No more invisible black stars. 
+        // 60% of stars flash White, 40% flash Red.
+        let fillColor;
+        if (s.colorVariant > 0.4) {
+            fillColor = isShocked ? COLOR_WHITE : COLOR_DARK_GREY;
+        } else {
+            fillColor = isShocked ? COLOR_RED : COLOR_MID_GREY;
         }
 
-        // Instead of beatTimer, we use midEnergy to scale the stars.
-        // I added Math.pow() to square the energy. This forces the math to act sharper, 
-        // preventing the stars from looking "mushy" during sustained vocal notes.
-        const scaleMultiplier = 1 + (Math.pow(midEnergy, 2) * 1.5);
-        const dynamicRadius = s.r * scaleMultiplier;
+        let dynamicRadius = s.r;
+        if (isShocked) {
+            const shockIntensity = 1 - (distFromCenter / Math.max(1, shockwaveRadius));
+            // Keep the scaling gentle (0.2) to avoid the dizzying effect
+            dynamicRadius = s.r * (1 + (shockIntensity * 0.2) + (bassEnergy * 0.1));
+        }
 
-        drawConcentricStar(ctx, dynamicRadius, fillColor, isVocalActive);
+        drawConcentricStar(ctx, dynamicRadius, fillColor, isShocked);
         ctx.restore();
     }
     
