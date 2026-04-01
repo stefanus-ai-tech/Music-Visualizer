@@ -1,0 +1,109 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+}
+
+#overlay {
+    position: absolute;
+    z-index: 10;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(20px);
+}
+
+.overlay-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding: 60px 50px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+}
+
+.title-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.title-n3 {
+    font-size: 72px;
+    font-weight: 900;
+    letter-spacing: 0.3em;
+    color: #fff;
+    line-height: 1;
+}
+
+.title-sub {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+}
+
+#startBtn {
+    padding: 14px 48px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 2px;
+    cursor: pointer;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+}
+
+#startBtn:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.9);
+    box-shadow: 0 0 30px rgba(255,255,255,0.05);
+}
+
+.hint {
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.1em;
+    text-align: center;
+}
+
+canvas {
+    height: 100vh;
+    aspect-ratio: 9 / 16;
+    display: block;
+}
+
+#stateIndicator {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    pointer-events: none;
+}
+
+#stateName {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: rgba(255,255,255,0.15);
+    text-transform: uppercase;
+}
