@@ -157,9 +157,22 @@ function renderLoop() {
     const chroma = extractChroma(dataArray);
     for (let i=0;i<12;i++) chromaSmoothed[i]=lerp(chromaSmoothed[i],chroma[i],0.05);
 
+// 🧠 ULTRA REACTIVE FEEDBACK LOGIC
+// Kita buat kurva eksponensial agar transisinya tajam (Max to Min)
+let intensity = Math.pow(energy, 1.2) + (beatTimer * 0.2);
+
+// Range target: 0.05 (saat hening) sampai 0.98 (saat peak)
+let targetFeedback = 0.05 + (intensity * 0.93);
+
+// Clamp agar tidak merusak visual (terlalu putih/terlalu gelap)
+targetFeedback = Math.min(0.98, Math.max(0.05, targetFeedback));
+
+// NAIKKAN LERP ke 0.4 agar slider "loncat" lebih cepat mengikuti beat
+let lerpSpeed = 0.4; 
+ctrlFeedback.value = lerp(parseFloat(ctrlFeedback.value), targetFeedback, lerpSpeed);
     renderBackground();
 
-// --- BEAT PUNCH (ANTI PUSING EDITION) ---
+    // --- BEAT PUNCH (ANTI PUSING EDITION) ---
     ctx.save();
     const shakeInt = parseFloat(ctrlShake.value);
     
