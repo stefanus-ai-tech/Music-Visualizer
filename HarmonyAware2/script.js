@@ -207,35 +207,38 @@ function renderBackground() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// ----------------------------------------------------
-// FUNGSI BARU: CRYSTAL KALEIDOSCOPE
-// ----------------------------------------------------
 function renderCrystalKaleidoscope() {
     if (logIndices.length === 0) return;
 
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     
-    // Setup warna dasar (Icy blue/silver tapi tetep bisa geser dikit)
-    // Warna muter pelan secara natural, TAPI pas ada beat warnanya langsung loncat berlawanan (invert/hue shift otomatis)
-    const baseHue = (200 + domHue() * 0.2 + (time * 30) + (beatTimer * 180) + (energy * 50)) % 360;
-    const rotSpeed = parseFloat(ctrlRotation.value);
+    // --- DANCEABLE LOGIC START ---
+    // 1. Time warping: Waktu berjalan lebih cepat saat energi tinggi (efek 'flow')
+    const timeWarp = time + (energy * 0.5) + (beatTimer * 0.2);
     
-    // Complexity ngatur jumlah lipatan simetri (mirip kaca spion di kaleidoskop)
-    const slices = 4 + parseInt(ctrlComplexity.value) * 2; // 6, 8, 10, 12...
+    // 2. Elastic Rotation: Rotasi tidak konstan, tapi 'nendang' mengikuti beat
+    const rotSpeed = parseFloat(ctrlRotation.value);
+    const dynamicRotation = (time * 0.1 * rotSpeed) + (beatTimer * 0.15 * rotSpeed);
+    
+    // 3. Wobble Effect: Goyangan organik pada pusat kristal
+    const wobbleX = Math.sin(time * 2) * bassEnergy * 20;
+    const wobbleY = Math.cos(time * 1.5) * bassEnergy * 20;
+    // --- DANCEABLE LOGIC END ---
+
+    const baseHue = (200 + domHue() * 0.2 + (time * 30) + (beatTimer * 180) + (energy * 50)) % 360;
+    const slices = 4 + parseInt(ctrlComplexity.value) * 2;
     const angleStep = (Math.PI * 2) / slices;
 
     const maxRadius = canvas.height * 0.6;
-    const rings = 8; // Jumlah layer kedalaman kristal
+    const rings = 8;
 
     ctx.globalCompositeOperation = parseFloat(ctrlSoftness.value) > 0.5 ? 'lighten' : 'screen';
 
-    // Kalkulasi poin-poin kristal berdasarkan audio
     let grid = [];
     for (let r = 0; r <= rings; r++) {
         let ringPoints = [];
         for (let s = 0; s <= slices; s++) {
-            // Ambil data frekuensi. Makin luar ring, makin tinggi frekuensi yang diambil
             let binIndex = Math.floor((r / rings) * (BINS * 0.8));
             let rawDb = dataArray[logIndices[binIndex]];
             if (!isFinite(rawDb)) rawDb = MIN_DB;
@@ -248,24 +251,23 @@ function renderCrystalKaleidoscope() {
             }
             const normalized = (smoothedY[binIndex] - MIN_DB) / (MAX_DB - MIN_DB);
 
-            // Twist angle biar pecahannya miring pas ada beat
-            const twist = (normalized * Math.PI * 0.2) * (r / rings);
-            const angle = (s * angleStep) + (time * 0.2 * rotSpeed) + twist;
+            // Twist kini dipengaruhi oleh timeWarp agar lebih fluid
+            const twist = (normalized * Math.PI * 0.25) * (r / rings) * Math.sin(timeWarp * 0.5);
+            const angle = (s * angleStep) + dynamicRotation + twist;
             
-            // Radius menonjol tajam ngikutin beat & frekuensi
-            const radDistortion = normalized * (maxRadius / rings) * (1 + beatTimer * 0.5);
+            // Pulsasi radius yang lebih elastis
+            const radDistortion = normalized * (maxRadius / rings) * (1 + beatTimer * 0.8 + energy * 0.2);
             const dist = (r * (maxRadius / rings)) + radDistortion;
 
             ringPoints.push({
-                x: cx + Math.cos(angle) * dist,
-                y: cy + Math.sin(angle) * dist,
+                x: cx + wobbleX + Math.cos(angle) * dist,
+                y: cy + wobbleY + Math.sin(angle) * dist,
                 norm: normalized
             });
         }
         grid.push(ringPoints);
     }
 
-    // Gambar facet (poligon segitiga) dari grid yang udah dibikin
     for (let r = 0; r < rings; r++) {
         for (let s = 0; s < slices; s++) {
             const p1 = grid[r][s];
@@ -273,10 +275,7 @@ function renderCrystalKaleidoscope() {
             const p3 = grid[r+1][s+1];
             const p4 = grid[r][s+1];
 
-            // Rata-rata intensitas untuk pewarnaan
             const avgNorm = (p1.norm + p2.norm + p3.norm) / 3;
-            
-            // Gradasi metalik/kristal: kontras tinggi antara gelap dan terang
             const lightness = 10 + (avgNorm * 70) + (beatTimer * 30);
             const saturation = 40 + (avgNorm * 60);
             
@@ -288,15 +287,16 @@ function renderCrystalKaleidoscope() {
             ctx.closePath();
             
             let grad1 = ctx.createLinearGradient(p1.x, p1.y, p3.x, p3.y);
-            grad1.addColorStop(0, `hsla(${baseHue}, ${saturation}%, ${lightness}%, ${0.5 + avgNorm})`);
-            grad1.addColorStop(1, `hsla(${baseHue + 20}, ${saturation}%, ${lightness * 0.3}%, ${0.2 + avgNorm})`);
+            grad1.addColorStop(0, `hsla(${baseHue}, ${saturation}%, ${lightness}%, ${0.4 + avgNorm * 0.6})`);
+            grad1.addColorStop(1, `hsla(${baseHue + 30}, ${saturation}%, ${lightness * 0.2}%, ${0.1})`);
             ctx.fillStyle = grad1;
             ctx.fill();
-            ctx.lineWidth = 1 + avgNorm * 2;
-            ctx.strokeStyle = `hsla(${baseHue}, 100%, 80%, ${0.3 + beatTimer * 0.4})`;
+            
+            ctx.lineWidth = 0.5 + avgNorm * 2;
+            ctx.strokeStyle = `hsla(${baseHue}, 100%, 80%, ${0.2 + beatTimer * 0.5})`;
             ctx.stroke();
 
-            // Segitiga Kanan (ngebentuk efek berlian 3D)
+            // Segitiga Kanan
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p3.x, p3.y);
@@ -304,33 +304,33 @@ function renderCrystalKaleidoscope() {
             ctx.closePath();
             
             let grad2 = ctx.createLinearGradient(p4.x, p4.y, p1.x, p1.y);
-            grad2.addColorStop(0, `hsla(${baseHue - 15}, ${saturation}%, ${lightness * 1.2}%, ${0.6 + avgNorm})`);
-            grad2.addColorStop(1, `hsla(${baseHue}, ${saturation}%, ${lightness * 0.5}%, ${0.3 + avgNorm})`);
+            grad2.addColorStop(0, `hsla(${baseHue - 20}, ${saturation}%, ${lightness * 1.1}%, ${0.5 + avgNorm * 0.5})`);
+            grad2.addColorStop(1, `hsla(${baseHue}, ${saturation}%, ${lightness * 0.4}%, ${0.2})`);
             ctx.fillStyle = grad2;
             ctx.fill();
             ctx.stroke();
         }
     }
 
-    // CORE BINTANG TAJAM DI TENGAH
+    // CORE BINTANG
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(-time * 0.5 * rotSpeed);
-    const starR = canvas.height * 0.05 + bassEnergy * canvas.height * 0.1;
+    ctx.translate(cx + wobbleX, cy + wobbleY);
+    // Counter-rotation agar pusat tetap fokus di tengah kekacauan
+    ctx.rotate(-dynamicRotation * 1.5);
+    const starR = canvas.height * 0.04 + (bassEnergy * canvas.height * 0.12);
     
     ctx.beginPath();
     for (let i = 0; i <= slices * 2; i++) {
         const angle = (i / (slices * 2)) * Math.PI * 2;
-        // Bikin selang-seling panjang pendek biar ngebentuk bintang ninja
-        const dist = i % 2 === 0 ? starR : starR * 0.3 * (1 + beatTimer);
+        const dist = i % 2 === 0 ? starR : starR * 0.2 * (1 + beatTimer * 2);
         const px = Math.cos(angle) * dist;
         const py = Math.sin(angle) * dist;
         if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
     }
     ctx.closePath();
-    ctx.fillStyle = `hsla(${baseHue}, 90%, 80%, ${0.8 + beatTimer})`;
-    ctx.shadowBlur = 30;
-    ctx.shadowColor = `hsla(${baseHue}, 100%, 70%, 1)`;
+    ctx.fillStyle = `hsla(${baseHue}, 90%, 90%, ${0.7 + beatTimer * 0.3})`;
+    ctx.shadowBlur = 20 + beatTimer * 30;
+    ctx.shadowColor = `hsla(${baseHue}, 100%, 75%, 1)`;
     ctx.fill();
     ctx.restore();
 }
