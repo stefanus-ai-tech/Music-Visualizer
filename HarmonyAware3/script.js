@@ -51,18 +51,31 @@ let ransomStrips = [];
 // ============================================================
 // Generate a dense, center-biased field of 150 stars
 const bgStars = [];
-for (let i = 0; i < 150; i++) {
-    // Bias positions slightly closer to the center instead of a pure random square
-    const dist = Math.pow(Math.random(), 0.8) * 1800; 
+// Dibuat sangat padat (300 bintang)
+for (let i = 0; i < 300; i++) {
+    const minDist = 400; 
+    const maxDist = 2500;
+    const dist = minDist + Math.pow(Math.random(), 0.5) * (maxDist - minDist);
     const angle = Math.random() * Math.PI * 2;
     
+    const posX = Math.cos(angle) * dist;
+    const posY = Math.sin(angle) * dist;
+
+    // Diagonal Weight: Menghitung posisi relatif terhadap sumbu Top-Right (+, -) ke Bottom-Left (-, +)
+    // Nilai tinggi berarti berada di pojok yang diinginkan.
+    const diagWeight = Math.abs(posX - posY) / 2000;
+
     bgStars.push({
-        x: Math.cos(angle) * dist,
-        y: Math.sin(angle) * dist,
-        r: 50 + Math.random() * 200, // Slightly smaller max radius to prevent overlapping clutter
+        x: posX,
+        y: posY,
+        r: 100 + Math.random() * 300, // UKURAN MASIF
         angle: Math.random() * Math.PI * 2,
-        speed: (Math.random() - 0.5) * 0.005,
-        colorVariant: Math.random() 
+        speed: (Math.random() - 0.5) * 0.01,
+        colorVariant: Math.random(),
+        band: Math.random() < 0.3 ? 'bass' : (Math.random() > 0.7 ? 'high' : 'mid'),
+        diagWeight: diagWeight,
+        snappedR: 0,
+        snappedAngle: 0
     });
 }
 class RansomStrip {
@@ -270,58 +283,59 @@ function drawConcentricStar(ctx, radius, fillColor, isBeat) {
 }
 
 function renderBackgroundStars() {
-    ctx.globalCompositeOperation = 'source-over';
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
+    const starSensitivity = document.getElementById('ctrlStarReactivity') ? parseFloat(document.getElementById('ctrlStarReactivity').value) : 1.2;
+    const softness = ctrlSoftness ? parseFloat(ctrlSoftness.value) : 0.5;
     
-    // Solid base color to wipe the frame
+    // Interval update untuk efek low-fps (jagged)
+    const stepFrame = Math.max(1, Math.floor((1.1 - softness) * 12));
+
     ctx.fillStyle = COLOR_BLACK;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
-    ctx.translate(cx, cy);
+    ctx.translate(canvas.width / 2, canvas.height / 2);
     
-    // UI CONTROL: Master Rotation
-    const rotVal = ctrlRotation ? parseFloat(ctrlRotation.value) : 0.5;
-    
-    // FIX 1: Removed the jarring bassEnergy jitter. 
-    // The starfield now drifts smoothly and constantly.
-    ctx.rotate(time * 0.02 * rotVal); 
-// Allow the shockwave to travel much further (exponent lowered to 1.2, multiplier raised to 2500)
-    const shockwaveRadius = Math.pow(midEnergy, 1.2) * 2500; 
+    // Rotasi global yang stabil (Tanpa Jitter)
+    const globalRot = time * 0.01 * (ctrlRotation ? parseFloat(ctrlRotation.value) : 0.5);
+    ctx.rotate(globalRot); 
 
     for (let i = 0; i < bgStars.length; i++) {
         let s = bgStars[i];
         
-        s.angle += s.speed * rotVal;
+        let myEnergy = s.band === 'bass' ? bassEnergy : (s.band === 'high' ? highEnergy : midEnergy);
+        
+        // AKTIVASI DIAGONAL:
+        // Gabungkan energi musik dengan posisi diagonal bintang (diagWeight)
+        const activationPower = (myEnergy * starSensitivity) + (s.diagWeight * midEnergy * 2);
+        const isActive = activationPower > (0.15 + s.colorVariant * 0.3);
+
+        // Update visual hanya pada frame tertentu (Jagged Motion)
+       if (frameCounter % stepFrame === 0) {
+            s.angle += s.speed;
+            s.snappedAngle = s.angle; // No jitter, ever
+
+            let targetR = s.r;
+            if (isActive) {
+                targetR = s.r * (1.1 + (activationPower * 0.7));
+            }
+            s.snappedR = targetR;
+        }
 
         ctx.save();
         ctx.translate(s.x, s.y);
-        ctx.rotate(s.angle);
+        ctx.rotate(s.snappedAngle);
 
-        const distFromCenter = Math.hypot(s.x, s.y);
-        const isShocked = (distFromCenter < shockwaveRadius) && (midEnergy > 0.1);
-
-        // CRITICAL FIX: No more invisible black stars. 
-        // 60% of stars flash White, 40% flash Red.
-        let fillColor;
-        if (s.colorVariant > 0.4) {
-            fillColor = isShocked ? COLOR_WHITE : COLOR_DARK_GREY;
-        } else {
-            fillColor = isShocked ? COLOR_RED : COLOR_MID_GREY;
+        // Warna: Putih dan Merah bergantian saat aktif
+        let fillColor = COLOR_DARK_GREY;
+        if (isActive) {
+            fillColor = (s.colorVariant > 0.45) ? COLOR_WHITE : COLOR_RED;
         }
 
-        let dynamicRadius = s.r;
-        if (isShocked) {
-            const shockIntensity = 1 - (distFromCenter / Math.max(1, shockwaveRadius));
-            // Keep the scaling gentle (0.2) to avoid the dizzying effect
-            dynamicRadius = s.r * (1 + (shockIntensity * 0.2) + (bassEnergy * 0.1));
-        }
-
-        drawConcentricStar(ctx, dynamicRadius, fillColor, isShocked);
+        // Gambar bintang
+        drawConcentricStar(ctx, s.snappedR, fillColor, isActive, activationPower);
+        
         ctx.restore();
     }
-    
     ctx.restore();
 }
 
