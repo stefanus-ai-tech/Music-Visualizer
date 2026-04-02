@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N3 — Living Audiovisual Organism</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Pirata+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="overlay">
+        <div class="overlay-inner">
+            <div class="title-block">
+                <span class="title-n3">N3</span>
+                <span class="title-sub">Living Organism v5</span>
+            </div>
+            <button id="startBtn">Initialize</button>
+            <p class="hint">Select a Tab or Screen → enable "Share Audio"</p>
+        </div>
+    </div>
+
+    <canvas id="visualizer" width="1080" height="1920"></canvas>
+
+ <div id="controlsPanel" class="hidden">
+        <div class="panel-header">DOPAMINE TUNER</div>
+        
+        <label>Beat Sensitivity (Sensitifitas Jedag-Jedug)
+            <input type="range" id="ctrlSensitivity" min="0" max="1" step="0.01" value="0.6">
+        </label>
+        
+        <label>Monster Bounce (Daya Pantul)
+            <input type="range" id="ctrlBounce" min="0" max="2" step="0.1" value="1.0">
+        </label>
+        
+        <label>Spike Chaos (Tingkat Kejang)
+            <input type="range" id="ctrlChaos" min="0" max="1" step="0.05" value="0.6">
+        </label>
+
+        <label>Chomp Width (Lebar Mangap)
+            <input type="range" id="ctrlChomp" min="0" max="400" step="10" value="150">
+        </label>
+
+        <label>Camera Quake (Gempa Bumi)
+            <input type="range" id="ctrlQuake" min="0" max="3" step="0.1" value="1.5">
+        </label>
+    </div>
+
+    <div id="stateIndicator">
+        <span id="stateName">—</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
