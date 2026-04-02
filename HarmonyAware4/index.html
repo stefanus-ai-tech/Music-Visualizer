@@ -12,7 +12,7 @@
         <div class="overlay-inner">
             <div class="title-block">
                 <span class="title-n3">N3</span>
-                <span class="title-sub">Living Organism v5</span>
+                <span class="title-sub">Living Organism v6</span>
             </div>
             <button id="startBtn">Initialize</button>
             <p class="hint">Select a Tab or Screen → enable "Share Audio"</p>
@@ -21,63 +21,106 @@
 
     <canvas id="visualizer" width="1080" height="1920"></canvas>
 
- <div id="controlsPanel" class="hidden">
+    <div id="controlsPanel" class="hidden">
         <div class="panel-header">DOPAMINE TUNER</div>
-        
 
-        <label>Genre Vibe (Color Palette)
+        <!-- ── COLOR ── -->
+        <div class="section-label">COLOR</div>
+
+        <label>Genre Vibe
             <select id="ctrlPalette">
                 <option value="mashle">Pop / Anime (Yellow/Orange)</option>
                 <option value="phonk">Phonk / Drift (Dark Purple)</option>
                 <option value="synthwave">Synthwave (Neon Pink/Cyan)</option>
                 <option value="metal">Deathcore (Crimson/Black)</option>
-                <option value="lofi">Lofi (Pastel Matcha) - *Warning: Glitchy*</option>
+                <option value="lofi">Lofi (Pastel Matcha)</option>
+                <option value="jungle">Jungle / DnB (Toxic Green)</option>
+                <option value="vapor">Vaporwave (Cotton Candy)</option>
+                <option value="rave">Rave (RGB Chaos)</option>
             </select>
         </label>
 
-        <label>Background Shape (Bentuk BG)
+        <label>Strobe Intensity (Kilatan BG)
+            <input type="range" id="ctrlStrobe" min="0" max="1" step="0.05" value="1.0">
+        </label>
+
+        <!-- ── CORE ── -->
+        <div class="section-label">CORE SHAPE</div>
+
+        <label>Organism Form
+            <select id="ctrlCoreShape">
+                <option value="jagged">Jagged Spike (Default)</option>
+                <option value="blob">Organic Blob (Smooth)</option>
+                <option value="star">Clean Star (Rigid)</option>
+                <option value="mandala">Mandala (8-fold Symmetry)</option>
+                <option value="worm">Worm Ring (Radial Bar)</option>
+            </select>
+        </label>
+
+        <label>Mirror Mode
+            <select id="ctrlMirror">
+                <option value="none">Off (Normal)</option>
+                <option value="horizontal">Horizontal Mirror</option>
+                <option value="vertical">Vertical Mirror</option>
+                <option value="quad">Quad Mirror (4x)</option>
+                <option value="kaleid">Kaleidoscope (6x)</option>
+            </select>
+        </label>
+
+        <!-- ── BACKGROUND ── -->
+        <div class="section-label">BACKGROUND</div>
+
+        <label>Background Shape
             <select id="ctrlBgShape">
-                <option value="mixed">Chaos Mixed (Campur)</option>
-                <option value="crescent">Crescents (Bulan Sabit)</option>
-                <option value="triangle">Triangles (Segitiga Tajam)</option>
-                <option value="cross">Heavy Crosses (Salib Brutal)</option>
+                <option value="mixed">Chaos Mixed</option>
+                <option value="crescent">Crescents Only</option>
+                <option value="triangle">Triangles Only</option>
+                <option value="cross">Heavy Crosses</option>
                 <option value="text">Gothic Text Only</option>
             </select>
         </label>
 
-        <label>Flash Impact (Kilatan Bass)
+        <label>Flash Impact Shape
             <select id="ctrlFlashShape">
                 <option value="mixed">Random Chaos</option>
-                <option value="slash">Claw Slashes (Cakaran)</option>
-                <option value="ring">Sonic Rings (Gelombang)</option>
+                <option value="slash">Claw Slashes</option>
+                <option value="ring">Sonic Rings</option>
+                <option value="burst">Star Burst</option>
                 <option value="text">Gothic Text</option>
             </select>
         </label>
-        
-        <label>Beat Sensitivity (Sensitifitas Jedag-Jedug)
+
+        <!-- ── PHYSICS ── -->
+        <div class="section-label">PHYSICS</div>
+
+        <label>Beat Sensitivity
             <input type="range" id="ctrlSensitivity" min="0" max="1" step="0.01" value="0.6">
         </label>
-        
-        <label>Monster Bounce (Daya Pantul)
+
+        <label>Monster Bounce
             <input type="range" id="ctrlBounce" min="0" max="2" step="0.1" value="1.0">
         </label>
-        
-        <label>Spike Chaos (Tingkat Kejang)
+
+        <label>Spike Chaos
             <input type="range" id="ctrlChaos" min="0" max="1" step="0.05" value="0.6">
         </label>
 
-        <label>Chomp Width (Lebar Mangap)
+        <label>Chomp Width
             <input type="range" id="ctrlChomp" min="0" max="400" step="10" value="150">
         </label>
 
-        <label>Camera Quake (Gempa Bumi)
+        <label>Camera Quake
             <input type="range" id="ctrlQuake" min="0" max="3" step="0.1" value="1.5">
         </label>
-    </div>
 
-    <!-- <div id="stateIndicator">
-        <span id="stateName">—</span>
-    </div> -->
+        <label>Rotation Speed
+            <input type="range" id="ctrlRotSpeed" min="0" max="3" step="0.1" value="0.5">
+        </label>
+
+        <label>Afterimage Trail
+            <input type="range" id="ctrlAfterimage" min="0" max="0.95" step="0.05" value="0.0">
+        </label>
+    </div>
 
     <script src="script.js"></script>
 </body>
