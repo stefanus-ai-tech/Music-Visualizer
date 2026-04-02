@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAISY // RAGE PROTOCOL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="scanlines"></div>
+    <div id="overlay">
+        <div class="overlay-inner">
+            <div class="glitch-wrap">
+                <div class="title-block">
+                    <span class="title-n3" data-text="DAISY">DAISY</span>
+                    <span class="title-sub">// RAGE PROTOCOL · NIGHTCORE BUILD //</span>
+                </div>
+            </div>
+            <div class="sys-info">
+                <span class="sys-line">[SYS] SPECTRAL ENGINE v3.7 ONLINE</span>
+                <span class="sys-line">[SYS] AWAITING AUDIO INPUT...</span>
+            </div>
+            <button id="startBtn">[ INITIALIZE ]</button>
+            <p class="hint">► Select Tab or Screen → Enable "Share Audio"</p>
+        </div>
+    </div>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="controlsPanel" class="hidden">
+        <div class="panel-section">
+            <div class="panel-header">// PALETTE</div>
+            <div class="preset-grid">
+                <button class="preset-btn active" data-preset="rage">RAGE</button>
+                <button class="preset-btn" data-preset="nightcore">NIGHTCORE</button>
+                <button class="preset-btn" data-preset="acid">ACID</button>
+                <button class="preset-btn" data-preset="void">VOID</button>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">// MORPHOLOGY</div>
+            <label>Erratic Intensity (Rave)
+                <input type="range" id="ctrlIntensity" min="0" max="2" step="0.1" value="1.5">
+            </label>
+            <label>Ring Count (Density)
+                <input type="range" id="ctrlRings" min="20" max="100" step="1" value="65">
+            </label>
+            <label>Audio Reactivity
+                <input type="range" id="ctrlReact" min="0" max="2" step="0.05" value="0.8">
+            </label>
+            <label>Organic Distortion (Noise)
+                <input type="range" id="ctrlNoise" min="0" max="50" step="1" value="25">
+            </label>
+            <label>Rotation Speed
+                <input type="range" id="ctrlSpin" min="-2" max="2" step="0.1" value="0.3">
+            </label>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">// AESTHETIC</div>
+            <label>Center Hole Size
+                <input type="range" id="ctrlHole" min="0" max="0.5" step="0.01" value="0.08">
+            </label>
+            <label>Line Thickness
+                <input type="range" id="ctrlThickness" min="0.5" max="3" step="0.1" value="1.2">
+            </label>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
