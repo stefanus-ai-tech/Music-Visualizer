@@ -1,7 +1,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    background: #F2CC0F; /* Mashle Deep Yellow */
+    background: #F2CC0F;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -29,16 +29,15 @@ body {
     border: 4px solid #0A0A0A;
     background: #fff;
     box-shadow: 12px 12px 0px #0A0A0A;
-    border-radius: 0px;
 }
 
 .title-block { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.title-n3 { 
-    font-family: 'Pirata One', serif; 
-    font-size: 80px; 
-    color: #0A0A0A; 
-    line-height: 1; 
-    text-shadow: 4px 4px 0px #F08A2E, -2px -2px 0px #0A0A0A; 
+.title-n3 {
+    font-family: 'Pirata One', serif;
+    font-size: 80px;
+    color: #0A0A0A;
+    line-height: 1;
+    text-shadow: 4px 4px 0px #F08A2E, -2px -2px 0px #0A0A0A;
 }
 .title-sub { font-size: 14px; font-weight: bold; color: #0A0A0A; text-transform: uppercase; }
 
@@ -54,9 +53,8 @@ body {
     text-transform: uppercase;
     transition: all 0.2s ease;
 }
-
 #startBtn:hover {
-    background: #F08A2E; /* Mashle Orange on hover */
+    background: #F08A2E;
     color: #0A0A0A;
     box-shadow: 6px 6px 0px #0A0A0A;
 }
@@ -65,27 +63,31 @@ body {
 
 canvas { height: 100vh; aspect-ratio: 9 / 16; display: block; }
 
-#stateIndicator { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 5; pointer-events: none; }
-#stateName { font-size: 14px; font-weight: bold; letter-spacing: 0.4em; color: #0A0A0A; text-transform: uppercase; background: #F2CC0F; padding: 4px 8px; border: 2px solid #0A0A0A; }
-
-/* Control Panel */
+/* ── Controls Panel ── */
 #controlsPanel {
     position: fixed;
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
-    width: 260px;
+    width: 270px;
+    max-height: 90vh;
+    overflow-y: auto;
     background: #F2CC0F;
     border: 4px solid #0A0A0A;
     box-shadow: 8px 8px 0px #0A0A0A;
-    padding: 24px;
+    padding: 20px 20px 28px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     color: #0A0A0A;
     z-index: 20;
     transition: opacity 0.5s ease;
+    scrollbar-width: thin;
+    scrollbar-color: #0A0A0A #F2CC0F;
 }
+#controlsPanel::-webkit-scrollbar { width: 6px; }
+#controlsPanel::-webkit-scrollbar-track { background: #F2CC0F; }
+#controlsPanel::-webkit-scrollbar-thumb { background: #0A0A0A; }
 
 #controlsPanel.hidden { opacity: 0; pointer-events: none; }
 
@@ -95,9 +97,20 @@ canvas { height: 100vh; aspect-ratio: 9 / 16; display: block; }
     color: #0A0A0A;
     border-bottom: 4px solid #0A0A0A;
     padding-bottom: 8px;
-    margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+}
+
+/* Section divider labels */
+.section-label {
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 0.25em;
+    color: #0A0A0A;
+    background: #0A0A0A;
+    color: #F2CC0F;
+    padding: 3px 8px;
+    margin-top: 4px;
 }
 
 #controlsPanel label {
@@ -106,10 +119,11 @@ canvas { height: 100vh; aspect-ratio: 9 / 16; display: block; }
     font-size: 11px;
     font-weight: bold;
     color: #0A0A0A;
-    gap: 6px;
-    letter-spacing: 0.1em;
+    gap: 5px;
+    letter-spacing: 0.08em;
 }
 
+/* Range sliders */
 input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
 input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -120,10 +134,31 @@ input[type=range]::-webkit-slider-thumb {
     cursor: pointer;
     margin-top: -6px;
 }
-input[type=range]::-webkit-slider-runnable-track { 
-    width: 100%; 
-    height: 6px; 
-    cursor: pointer; 
-    background: #0A0A0A; 
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%; height: 6px;
+    cursor: pointer;
+    background: #0A0A0A;
 }
 input[type=range]:focus { outline: none; }
+
+/* Selects */
+select {
+    -webkit-appearance: none;
+    appearance: none;
+    background: #0A0A0A;
+    color: #F2CC0F;
+    border: 2px solid #0A0A0A;
+    padding: 6px 28px 6px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    width: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23F2CC0F' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 10px;
+}
+select:focus { outline: 2px solid #F08A2E; }
+select option { background: #0A0A0A; color: #F2CC0F; }
