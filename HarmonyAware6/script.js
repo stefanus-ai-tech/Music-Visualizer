@@ -1,5 +1,5 @@
 // ============================================================
-// N3 — ERRATIC RAVE DAISY (AESTHETIC PASTEL VERSION)
+// N3 — ERRATIC RAVE DAISY (AUTO-SWAP PASTEL PALETTE)
 // ============================================================
 
 const canvas = document.getElementById('visualizer');
@@ -25,21 +25,25 @@ const PALETTES = {
     matcha: ['#F3F8FF', '#E2F1E7', '#C4D7E0', '#9B86BD']
 };
 
-let currentPalette = PALETTES.lilac;
+let currentPaletteKey = 'lilac';
+let currentPalette = PALETTES[currentPaletteKey];
 let currentBg = currentPalette[0];
 let currentFg = currentPalette[2];
 let currentAlt = currentPalette[3];
 
-// Palette Selection Logic
+let lastSwapTime = 0;
+const SWAP_COOLDOWN = 3000; // Slower swap: 3000 milliseconds (3 seconds) between palette changes
+
+
+// Manual Palette Selection Logic (masih bisa diklik manual)
 document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         
-        const presetKey = e.target.dataset.preset;
-        currentPalette = PALETTES[presetKey];
+        currentPaletteKey = e.target.dataset.preset;
+        currentPalette = PALETTES[currentPaletteKey];
         
-        // Langsung update warna saat diklik
         currentBg = currentPalette[0];
         currentFg = currentPalette[2];
         currentAlt = currentPalette[3];
@@ -68,7 +72,7 @@ let erraticPetalMod = 0;
 let erraticSpinSpike = 0;
 let currentScale = 1.0;
 
-// Background Elements (Tanpa Wajah)
+// Background Elements
 let bgElements = [];
 for (let i = 0; i < 35; i++) {
     bgElements.push({
@@ -158,18 +162,43 @@ function renderLoop() {
     const eM = getEnergy(dataArray, Math.floor(BIN_COUNT * 0.05), Math.floor(BIN_COUNT * 0.3));
     const intensity = ctrlIntensity ? parseFloat(ctrlIntensity.value) : 1.5;
 
-    // BEAT DROP DETECTION
+ // BEAT DROP DETECTION
     if (eB - lastBass > 0.02 && eB > 0.05) { 
         beatTimer = 1.0; 
         currentScale = 1.1 + (eB * 0.3 * intensity);
 
         if (intensity > 0.1) {
-            // SWAP WARNA dalam Palet Aesthetic
-            currentBg = currentPalette[Math.floor(Math.random() * currentPalette.length)];
-            currentFg = currentPalette.find(c => c !== currentBg) || currentPalette[0];
-            currentAlt = currentPalette.find(c => c !== currentBg && c !== currentFg) || currentPalette[1];
+            
+            // --- NEW TIME CHECK LOGIC ---
+            const currentTime = Date.now();
+            if (currentTime - lastSwapTime > SWAP_COOLDOWN) {
+                lastSwapTime = currentTime; // Reset the timer
 
-            // Mutasi Morphology
+                // AUTO-SWAP PALETTE LOGIC
+                const paletteKeys = Object.keys(PALETTES);
+                
+                // Pilih palet baru yang berbeda dari yang sekarang
+                const availableKeys = paletteKeys.filter(k => k !== currentPaletteKey);
+                currentPaletteKey = availableKeys[Math.floor(Math.random() * availableKeys.length)];
+                currentPalette = PALETTES[currentPaletteKey];
+
+                // Update UI Button secara otomatis
+                document.querySelectorAll('.preset-btn').forEach(b => {
+                    if (b.dataset.preset === currentPaletteKey) {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
+
+                // Acak posisi warna dalam palet baru
+                currentBg = currentPalette[Math.floor(Math.random() * currentPalette.length)];
+                currentFg = currentPalette.find(c => c !== currentBg) || currentPalette[0];
+                currentAlt = currentPalette.find(c => c !== currentBg && c !== currentFg) || currentPalette[1];
+            }
+            // ----------------------------
+
+            // Mutasi Morphology (Kept OUTSIDE the timer so the shape still glitches on every beat)
             erraticPhaseShift = (Math.random() * Math.PI * 4) * intensity;
             erraticPetalMod = Math.floor((Math.random() - 0.5) * 16 * intensity);
             erraticSpinSpike = (Math.random() - 0.5) * 0.8 * intensity;
@@ -217,7 +246,7 @@ function renderLoop() {
 }
 
 // ============================================================
-// RENDER BACKGROUND (TANPA WAJAH)
+// RENDER BACKGROUND
 // ============================================================
 function renderBackground(intensity) {
     ctx.save();
@@ -254,7 +283,6 @@ function renderBackground(intensity) {
         const petalRadius = el.size * 0.45;
         const centerDistance = el.size * 0.35;
 
-        // Gambar Kelopak
         for (let p = 0; p < numPetals; p++) {
             const pAngle = (Math.PI * 2 / numPetals) * p;
             const px = Math.cos(pAngle) * centerDistance;
@@ -265,7 +293,6 @@ function renderBackground(intensity) {
             ctx.stroke();
         }
 
-        // Gambar Inti Bunga
         ctx.beginPath();
         ctx.arc(0, 0, el.size * 0.4, 0, Math.PI * 2);
         ctx.fillStyle = currentAlt;
