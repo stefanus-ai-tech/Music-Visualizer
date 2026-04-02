@@ -24,6 +24,36 @@
  <div id="controlsPanel" class="hidden">
         <div class="panel-header">DOPAMINE TUNER</div>
         
+
+        <label>Genre Vibe (Color Palette)
+            <select id="ctrlPalette">
+                <option value="mashle">Pop / Anime (Yellow/Orange)</option>
+                <option value="phonk">Phonk / Drift (Dark Purple)</option>
+                <option value="synthwave">Synthwave (Neon Pink/Cyan)</option>
+                <option value="metal">Deathcore (Crimson/Black)</option>
+                <option value="lofi">Lofi (Pastel Matcha) - *Warning: Glitchy*</option>
+            </select>
+        </label>
+
+        <label>Background Shape (Bentuk BG)
+            <select id="ctrlBgShape">
+                <option value="mixed">Chaos Mixed (Campur)</option>
+                <option value="crescent">Crescents (Bulan Sabit)</option>
+                <option value="triangle">Triangles (Segitiga Tajam)</option>
+                <option value="cross">Heavy Crosses (Salib Brutal)</option>
+                <option value="text">Gothic Text Only</option>
+            </select>
+        </label>
+
+        <label>Flash Impact (Kilatan Bass)
+            <select id="ctrlFlashShape">
+                <option value="mixed">Random Chaos</option>
+                <option value="slash">Claw Slashes (Cakaran)</option>
+                <option value="ring">Sonic Rings (Gelombang)</option>
+                <option value="text">Gothic Text</option>
+            </select>
+        </label>
+        
         <label>Beat Sensitivity (Sensitifitas Jedag-Jedug)
             <input type="range" id="ctrlSensitivity" min="0" max="1" step="0.01" value="0.6">
         </label>
@@ -45,9 +75,9 @@
         </label>
     </div>
 
-    <div id="stateIndicator">
+    <!-- <div id="stateIndicator">
         <span id="stateName">—</span>
-    </div>
+    </div> -->
 
     <script src="script.js"></script>
 </body>
