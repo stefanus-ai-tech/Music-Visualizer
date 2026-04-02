@@ -32,7 +32,7 @@ let currentFg = currentPalette[2];
 let currentAlt = currentPalette[3];
 
 let lastSwapTime = 0;
-const SWAP_COOLDOWN = 3000; // Slower swap: 3000 milliseconds (3 seconds) between palette changes
+const SWAP_COOLDOWN = 1000; // Slower swap: 1000 milliseconds (1 second) between palette changes
 
 
 // Manual Palette Selection Logic (masih bisa diklik manual)
@@ -74,11 +74,14 @@ let currentScale = 1.0;
 
 // Background Elements
 let bgElements = [];
-for (let i = 0; i < 35; i++) {
+// Increased count from 35 to 200 for maximum density
+for (let i = 0; i < 200; i++) { 
     bgElements.push({
-        x: (Math.random() - 0.5) * 3000,
-        y: (Math.random() - 0.5) * 3000,
-        size: 50 + Math.random() * 100,
+        // Reduced spread from 3000 to 1500 so they stay relevant to the phone screen
+        x: (Math.random() - 0.5) * 1500, 
+        y: (Math.random() - 0.5) * 1500,
+        // Drastically reduced size: now ranges from 4px to 12px (previously 50-150)
+        size: 4 + Math.random() * 8, 
         angle: Math.random() * Math.PI * 2,
         speed: (Math.random() - 0.5) * 0.02,
         parallax: 0.2 + Math.random() * 0.8
@@ -86,8 +89,20 @@ for (let i = 0; i < 35; i++) {
 }
 
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Define maximum phone width (e.g., standard mobile max is ~400px)
+    const phoneMaxWidth = 400; 
+    
+    let calcWidth = Math.min(window.innerWidth, phoneMaxWidth);
+    let calcHeight = calcWidth * (16 / 9); // Force 9:16 aspect ratio
+
+    // Prevent vertical overflow if the browser window is very short
+    if (calcHeight > window.innerHeight) {
+        calcHeight = window.innerHeight;
+        calcWidth = calcHeight * (9 / 16);
+    }
+
+    canvas.width = calcWidth;
+    canvas.height = calcHeight;
 }
 window.addEventListener('resize', resizeCanvas);
 
@@ -145,6 +160,38 @@ function getEnergy(data, from, to) {
     }
     return sum / Math.max(1, (to - from));
 }
+
+// ============================================================
+// UI TOGGLE LOGIC
+// ============================================================
+const toggleUIBtn = document.createElement('button');
+toggleUIBtn.innerText = 'Hide UI';
+// Basic styling to keep it visible and floating over the canvas
+Object.assign(toggleUIBtn.style, {
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+    zIndex: '9999',
+    padding: '8px 12px',
+    background: '#111',
+    color: '#FFF',
+    border: '1px solid #444',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontFamily: 'monospace'
+});
+document.body.appendChild(toggleUIBtn);
+
+toggleUIBtn.addEventListener('click', () => {
+    // Toggles the hidden class on your controls panel
+    controlsPanel.classList.toggle('hidden');
+    // Update button text based on state
+    if (controlsPanel.classList.contains('hidden')) {
+        toggleUIBtn.innerText = 'Show UI';
+    } else {
+        toggleUIBtn.innerText = 'Hide UI';
+    }
+});
 
 // ============================================================
 // MAIN RENDER LOOP
@@ -314,7 +361,8 @@ function renderLayeredFlower(intensity) {
     const holeSize = parseFloat(ctrlHole.value);
     const lineThick = parseFloat(ctrlThickness.value);
     
-    const maxRadius = Math.min(canvas.width, canvas.height) * 0.42;
+    // NEW: Flower is now small and contained
+    const maxRadius = Math.min(canvas.width, canvas.height) * 0.15;
     
     ctx.lineJoin = beatTimer > 0.2 && intensity > 0.5 ? 'miter' : 'round';
     ctx.miterLimit = 5;
