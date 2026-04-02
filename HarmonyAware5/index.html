@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N3 — Living Audiovisual Organism</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="overlay">
+        <div class="overlay-inner">
+            <div class="title-block">
+                <span class="title-n3">N3</span>
+                <span class="title-sub">Living Organism v9 · Mountain</span>
+            </div>
+            <button id="startBtn">Initialize</button>
+            <p class="hint">Select a Tab or Screen → enable "Share Audio"</p>
+        </div>
+    </div>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="controlsPanel" class="hidden">
+
+        <!-- PALETTE PRESETS -->
+        <div class="panel-section">
+            <div class="panel-header">PALETTE</div>
+            <div class="preset-grid">
+                <button class="preset-btn active" data-preset="dusk">Mountain Dusk</button>
+                <button class="preset-btn" data-preset="arctic">Arctic</button>
+                <button class="preset-btn" data-preset="volcanic">Volcanic</button>
+                <button class="preset-btn" data-preset="forest">Midnight Forest</button>
+                <button class="preset-btn" data-preset="golden">Golden Hour</button>
+                <button class="preset-btn" data-preset="void">Void</button>
+            </div>
+        </div>
+
+        <!-- TERRAIN -->
+        <div class="panel-section">
+            <div class="panel-header">TERRAIN</div>
+            <label>Ridge Drift Speed
+                <input type="range" id="ctrlRotation" min="-3" max="3" step="0.1" value="0.5">
+            </label>
+            <label>Ridge Complexity
+                <input type="range" id="ctrlComplexity" min="1" max="8" step="1" value="5">
+            </label>
+            <label>Ridge Smoothness
+                <input type="range" id="ctrlSmoothness" min="0.02" max="0.4" step="0.01" value="0.15">
+            </label>
+            <label>Beat Surge Intensity
+                <input type="range" id="ctrlShake" min="0" max="1" step="0.05" value="0.6">
+            </label>
+        </div>
+
+        <!-- ATMOSPHERE -->
+        <div class="panel-section">
+            <div class="panel-header">ATMOSPHERE</div>
+            <label>Fog Density
+                <input type="range" id="ctrlFogDensity" min="0" max="1" step="0.05" value="0.35">
+            </label>
+            <label>Fog Height
+                <input type="range" id="ctrlFogHeight" min="0.2" max="0.7" step="0.01" value="0.45">
+            </label>
+            <label>Fog Warmth
+                <input type="range" id="ctrlFogWarmth" min="-1" max="1" step="0.05" value="0.3">
+            </label>
+            <label>Sky Brightness
+                <input type="range" id="ctrlSkyBright" min="0.4" max="1.6" step="0.05" value="1.0">
+            </label>
+            <label>Atmospheric Depth
+                <input type="range" id="ctrlDepthFade" min="0" max="1" step="0.05" value="0.5">
+            </label>
+        </div>
+
+        <!-- COLOR -->
+        <div class="panel-section">
+            <div class="panel-header">COLOR</div>
+            <label>Hue Drift (energy)
+                <input type="range" id="ctrlHueDrift" min="0" max="60" step="1" value="8">
+            </label>
+            <label>Beat Flash Warmth
+                <input type="range" id="ctrlFlashWarmth" min="0" max="1" step="0.05" value="0.6">
+            </label>
+            <label>Layer Saturation
+                <input type="range" id="ctrlSaturation" min="0" max="2" step="0.05" value="1.0">
+            </label>
+        </div>
+
+        <!-- hidden compat -->
+        <input type="range" id="ctrlFeedback" min="0" max="0.98" step="0.01" value="0.90" style="display:none">
+        <input type="range" id="ctrlSoftness" min="0.1" max="1" step="0.05" value="0.8" style="display:none">
+    </div>
+
+    <div id="stateIndicator">
+        <span id="stateName">—</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
