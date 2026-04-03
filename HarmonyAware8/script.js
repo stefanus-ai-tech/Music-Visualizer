@@ -1,5 +1,5 @@
 // ============================================================
-// MARIONETTE // STRING PROTOCOL — HORROR BUILD
+// MARIONETTE // STRING PROTOCOL — ABOMINATION PHYSICS BUILD
 // ============================================================
 
 const canvas = document.getElementById('visualizer');
@@ -8,7 +8,7 @@ const startBtn = document.getElementById('startBtn');
 const overlay = document.getElementById('overlay');
 const controlsPanel = document.getElementById('controlsPanel');
 
-const ctrlRings     = document.getElementById('ctrlRings'); // Now controls background string density
+const ctrlRings     = document.getElementById('ctrlRings');
 const ctrlReact     = document.getElementById('ctrlReact');
 const ctrlNoise     = document.getElementById('ctrlNoise');
 const ctrlSpin      = document.getElementById('ctrlSpin');
@@ -25,8 +25,6 @@ const PALETTES = {
 
 let currentPaletteKey = 'blood';
 let pal = PALETTES[currentPaletteKey];
-let lastSwapTime = 0;
-const SWAP_COOLDOWN = 800;
 
 document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -52,11 +50,14 @@ let lastBass     = 0;
 let bassEnergy   = 0;
 let midEnergy    = 0;
 let globalSpin   = 0;
+let spinDirection = 1;
 let erraticSpike = 0;
 let currentScale = 1.0;
-let glitchTimer  = 0;
 let chromaOffset = 0;
-let spinDirection = 1;
+
+let abominationPaths = [];
+let erraticPhase = 0;
+let erraticPetal = 0;
 
 // Dust Particles
 const PARTICLE_COUNT = 40;
@@ -69,6 +70,45 @@ for (let i = 0; i < PARTICLE_COUNT; i++) {
         speedY: -(0.5 + Math.random() * 1.5)
     });
 }
+
+// ============================================================
+// VERLET PHYSICS ENGINE (APPENDAGES & CORE)
+// ============================================================
+const points = [];
+const sticks = [];
+const GRAVITY = 0.9;
+const FRICTION = 0.92;
+
+function addPoint(x, y) {
+    const p = { x, y, oldx: x, oldy: y };
+    points.push(p);
+    return p;
+}
+
+function addStick(p1, p2, length) {
+    sticks.push({ p1, p2, len: length || Math.hypot(p2.x - p1.x, p2.y - p1.y) });
+}
+
+// The Skeleton: A massive central core, with 3 dangling physical tentacles
+const monster = {
+    core: addPoint(0, 80),
+    
+    // Left Tentacle
+    l1: addPoint(-30, 130), l2: addPoint(-40, 180), l3: addPoint(-50, 240),
+    
+    // Center Tentacle (Longest)
+    c1: addPoint(0, 140), c2: addPoint(0, 200), c3: addPoint(0, 280), c4: addPoint(0, 360),
+    
+    // Right Tentacle
+    r1: addPoint(30, 130), r2: addPoint(40, 180), r3: addPoint(50, 240)
+};
+
+// Bind tentacles to the core
+addStick(monster.core, monster.l1, 50); addStick(monster.l1, monster.l2, 50); addStick(monster.l2, monster.l3, 60);
+addStick(monster.core, monster.c1, 60); addStick(monster.c1, monster.c2, 60); addStick(monster.c2, monster.c3, 80); addStick(monster.c3, monster.c4, 80);
+addStick(monster.core, monster.r1, 50); addStick(monster.r1, monster.r2, 50); addStick(monster.r2, monster.r3, 60);
+
+// ============================================================
 
 function resizeCanvas() {
     canvas.width  = window.innerWidth; 
@@ -124,7 +164,6 @@ function getEnergy(data, from, to) {
     return sum / Math.max(1, to - from);
 }
 
-// UI Toggle
 const toggleUIBtn = document.createElement('button');
 toggleUIBtn.id = 'toggleUIBtn';
 toggleUIBtn.innerText = '[ HIDE UI ]';
@@ -153,44 +192,47 @@ function renderLoop() {
     const eM = getEnergy(dataArray, Math.floor(BIN_COUNT * 0.05), Math.floor(BIN_COUNT * 0.3));
     const intensity = parseFloat(ctrlIntensity.value);
 
-    // Jerky snap logic
+    // Violent Physics Snaps
     if (eB - lastBass > 0.03 && eB > 0.08) {
         beatTimer    = 1.0;
-        currentScale = 1.05 + eB * 0.15 * intensity;
-        glitchTimer  = 1.0;
+        currentScale = 1.05 + eB * 0.2 * intensity;
         chromaOffset = (Math.random() - 0.5) * 8 * intensity;
-        erraticSpike = (Math.random() - 0.5) * 0.5 * intensity;
+        erraticSpike = (Math.random() - 0.5) * 0.8 * intensity;
+        
+        erraticPhase = (Math.random() * Math.PI * 4) * intensity;
+        erraticPetal = Math.floor((Math.random() - 0.5) * 12 * intensity);
+
+        // PHYSICS YANK: Drop the heavy core downwards
+        monster.core.y += eB * 100 * intensity;
+        
+        // Thrash the tentacles
+        monster.l3.x += (Math.random() - 0.5) * 60 * intensity;
+        monster.r3.x += (Math.random() - 0.5) * 60 * intensity;
+        monster.c4.x += (Math.random() - 0.5) * 80 * intensity;
     }
     lastBass = eB;
 
-    beatTimer    *= 0.65; // Fast decay for sharp jerks
+    beatTimer    *= 0.65; 
     chromaOffset *= 0.7;
     currentScale += (1.0 - currentScale) * 0.4;
     bassEnergy   += (eB - bassEnergy) * 0.7;
     midEnergy    += (eM - midEnergy) * 0.6;
     erraticSpike *= 0.8;
+    erraticPhase *= 0.9;
+    erraticPetal *= 0.9;
 
-    // ============================================================
-    // CRITICAL FIX: PENDULUM BOUNCE
-    // ============================================================
-    // Calculate current velocity based on UI slider and audio spikes
+    // Pendulum Swing Logic
     let spinVelocity = parseFloat(ctrlSpin.value) * 0.02 + (erraticSpike * 0.1);
-    
-    // Apply velocity in the current direction
     globalSpin += spinVelocity * spinDirection;
-
-    // Set a hard limit to prevent the puppet from going horizontal or upside down.
-    // 1.2 radians is roughly 70 degrees.
-    const MAX_SWING_ANGLE = 1.2;
+    const MAX_SWING_ANGLE = 1.0;
 
     if (globalSpin > MAX_SWING_ANGLE) {
         globalSpin = MAX_SWING_ANGLE;
-        spinDirection = -1; // Hit the right wall, violently bounce left
+        spinDirection = -1;
     } else if (globalSpin < -MAX_SWING_ANGLE) {
         globalSpin = -MAX_SWING_ANGLE;
-        spinDirection = 1;  // Hit the left wall, violently bounce right
+        spinDirection = 1;
     }
-    // ============================================================
 
     for (let i = 0; i < BINS; i++) {
         const norm = Math.max(0, ((dataArray[logIndices[i]] || MIN_DB) - MIN_DB) / (MAX_DB - MIN_DB));
@@ -199,13 +241,12 @@ function renderLoop() {
 
     const W = canvas.width, H = canvas.height;
 
-    // CSS hue glitch
     if (Math.abs(chromaOffset) > 0.4) {
-        canvas.style.filter = `hue-rotate(${chromaOffset * 5}deg) contrast(1.2)`;
+        canvas.style.filter = `hue-rotate(${chromaOffset * 5}deg) contrast(1.3) saturate(1.2)`;
         setTimeout(() => { canvas.style.filter = 'none'; }, 40);
     }
 
-    const shakeMag = beatTimer > 0.2 ? beatTimer * 10 * intensity : 0;
+    const shakeMag = beatTimer > 0.2 ? beatTimer * 12 * intensity : 0;
     const shakeX = shakeMag > 0 ? (Math.random() - 0.5) * shakeMag : 0;
     const shakeY = shakeMag > 0 ? (Math.random() - 0.5) * shakeMag : 0;
 
@@ -216,23 +257,173 @@ function renderLoop() {
     drawBackgroundStrings(W, H, intensity);
 
     ctx.save();
-    // Anchor the marionette near the top of the screen
-    ctx.translate(W / 2 + shakeX, H * 0.2 + shakeY);
+    ctx.translate(W / 2 + shakeX, H * 0.15 + shakeY);
     
-    // The entire setup swings slightly
     const swing = Math.sin(time) * 0.1 + globalSpin;
     ctx.rotate(swing);
     ctx.scale(currentScale, currentScale);
 
-    drawMarionette(intensity);
+    processRagdollPhysics(intensity);
+    drawEntity(intensity);
 
     ctx.restore();
     drawVignette(W, H);
 }
 
 // ============================================================
-// SCENE COMPONENTS
+// SCENE & PHYSICS COMPONENTS
 // ============================================================
+
+function processRagdollPhysics(intensity) {
+    const react = parseFloat(ctrlReact.value);
+    const noise = parseFloat(ctrlNoise.value);
+    
+    // 1. Apply Gravity and Momentum
+    for (let p of points) {
+        let vx = (p.x - p.oldx) * FRICTION;
+        let vy = (p.y - p.oldy) * FRICTION;
+        p.oldx = p.x;
+        p.oldy = p.y;
+        p.x += vx;
+        p.y += vy + GRAVITY; 
+    }
+
+    // 2. Control Strings (Pulling the heavy core back up to the crossbar)
+    const barY = -50;
+    const bJerkX = (Math.random() - 0.5) * noise * beatTimer * intensity * 5;
+
+    // The main string pulls the core back to its resting spot
+    monster.core.x += (bJerkX - monster.core.x) * 0.2;
+    monster.core.y += ((barY + 140) - monster.core.y) * 0.15; // Spring back up after dropping
+
+    // Inject audio jitter directly into tentacles
+    monster.l3.x += (Math.random() - 0.5) * smoothedBins[2] * react * intensity * 15;
+    monster.r3.x += (Math.random() - 0.5) * smoothedBins[6] * react * intensity * 15;
+
+    // 3. Resolve Constraints (Stick lengths)
+    for (let i = 0; i < 5; i++) {
+        for (let s of sticks) {
+            let dx = s.p2.x - s.p1.x;
+            let dy = s.p2.y - s.p1.y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist === 0) continue; 
+            let difference = s.len - dist;
+            let percent = (difference / dist) / 2;
+            let offsetX = dx * percent;
+            let offsetY = dy * percent;
+
+            s.p1.x -= offsetX; s.p1.y -= offsetY;
+            s.p2.x += offsetX; s.p2.y += offsetY;
+        }
+    }
+}
+
+function buildAbominationPaths(intensity) {
+    const reactAmp  = parseFloat(ctrlReact.value);
+    const noiseAmp  = parseFloat(ctrlNoise.value) / 25;
+    const holeSize  = parseFloat(ctrlHole.value);
+    const lineThick = parseFloat(ctrlThickness.value);
+    const maxRadius = Math.min(canvas.width, canvas.height) * 0.12;
+
+    abominationPaths = [];
+    const resolution = 80; // Lower resolution for sharper, creepier angles
+
+    function buildLayer(layerRadius, layerAmp, basePetals, phaseMult, alpha, audioStart, audioEnd, color) {
+        const petals = Math.max(1, basePetals + Math.round(erraticPetal));
+        const pts = new Float32Array((resolution + 1) * 2);
+        const rBase = holeSize * maxRadius + layerRadius;
+        const phase = phaseMult + erraticPhase;
+
+        for (let j = 0; j <= resolution; j++) {
+            const t = (j / resolution) * Math.PI * 2;
+            const angle = t + (time * 0.5);
+            const binIdx = Math.floor(audioStart + (audioEnd - audioStart) * Math.sin((j / resolution) * Math.PI));
+            const audio = smoothedBins[binIdx] || 0;
+            
+            // Sharp, erratic wave equation
+            const wave = Math.abs(Math.sin((petals * t + phase) / 2)) * 2 - 1;
+            const amp = layerAmp * noiseAmp + audio * maxRadius * 0.6 * reactAmp * (1 + intensity);
+            const r = rBase + amp * wave;
+            
+            pts[j * 2]     = r * Math.cos(angle);
+            pts[j * 2 + 1] = r * Math.sin(angle);
+        }
+        abominationPaths.push({ pts, color, alpha, lineWidth: lineThick + beatTimer * intensity * 2 });
+    }
+
+    // Three layers of jagged geometric horror
+    buildLayer(maxRadius * 0.9, maxRadius * 0.4, 6, Math.PI, 0.9, 0, 10, pal.primary);
+    buildLayer(maxRadius * 0.5, maxRadius * 0.3, 12, Math.PI * 2, 0.85, 10, 30, pal.fg);
+    buildLayer(maxRadius * 0.2, maxRadius * 0.1, 18, Math.PI * 4, 0.95, 30, 60, pal.alt);
+}
+
+function drawEntity(intensity) {
+    const thick = parseFloat(ctrlThickness.value);
+    const react = parseFloat(ctrlReact.value);
+    
+    const barWidth = 240 + smoothedBins[5] * 50 * react;
+    const barY = -50;
+
+    // 1. Draw Control Bar
+    ctx.lineJoin = 'miter';
+    ctx.strokeStyle = pal.fg;
+    ctx.lineWidth = thick * 3;
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.moveTo(-barWidth/2 - 20, barY);
+    ctx.lineTo(barWidth/2 + 20, barY);
+    ctx.moveTo(0, barY - 40);
+    ctx.lineTo(0, barY + 40);
+    ctx.stroke();
+
+    // 2. Draw Main Strings attaching to the Core
+    ctx.strokeStyle = pal.alt;
+    ctx.lineWidth = thick * 0.8;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(-barWidth/3, barY); ctx.lineTo(monster.core.x - 20, monster.core.y - 20);
+    ctx.moveTo(barWidth/3, barY); ctx.lineTo(monster.core.x + 20, monster.core.y - 20);
+    ctx.moveTo(0, barY); ctx.lineTo(monster.core.x, monster.core.y - 40);
+    ctx.stroke();
+
+    // 3. Draw Dangling Appendages (Physics Tentacles)
+    ctx.strokeStyle = pal.primary;
+    ctx.lineWidth = thick * 2;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    for (let s of sticks) {
+        ctx.moveTo(s.p1.x, s.p1.y);
+        ctx.lineTo(s.p2.x, s.p2.y);
+    }
+    ctx.stroke();
+
+    // 4. Draw the Abomination Body over the Core
+    ctx.save();
+    // Move the canvas origin to wherever the physics engine put the core
+    ctx.translate(monster.core.x, monster.core.y);
+    
+    buildAbominationPaths(intensity);
+    
+    ctx.lineJoin = 'miter';
+    ctx.miterLimit = 8;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = pal.glow;
+
+    for (const p of abominationPaths) {
+        ctx.globalAlpha = p.alpha;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth   = p.lineWidth;
+        ctx.beginPath();
+        const pts = p.pts;
+        ctx.moveTo(pts[0], pts[1]);
+        for (let j = 2; j < pts.length; j += 2) ctx.lineTo(pts[j], pts[j + 1]);
+        ctx.closePath();
+        ctx.stroke();
+    }
+    
+    ctx.shadowBlur = 0;
+    ctx.restore();
+}
 
 function drawDust(W, H) {
     ctx.fillStyle = pal.fg;
@@ -254,7 +445,6 @@ function drawBackgroundStrings(W, H, intensity) {
 
     for(let i=0; i<stringCount; i++) {
         const xPos = (i / stringCount) * W;
-        // Strings vibrate based on audio bins
         const bin = smoothedBins[i % BINS] || 0;
         const vibration = Math.sin(time * 10 + i) * bin * 20 * intensity;
         
@@ -263,112 +453,6 @@ function drawBackgroundStrings(W, H, intensity) {
         ctx.quadraticCurveTo(xPos + vibration, H/2, xPos, H);
         ctx.stroke();
     }
-}
-
-function drawMarionette(intensity) {
-    const react = parseFloat(ctrlReact.value);
-    const noise = parseFloat(ctrlNoise.value);
-    const thick = parseFloat(ctrlThickness.value);
-    const hole  = parseFloat(ctrlHole.value);
-
-    // CRITICAL FIX: The X axis can jitter left/right, but the Y axis 
-    // now exclusively pushes DOWN based on the bass energy to simulate a heavy drop.
-    const bJerkX = (Math.random() - 0.5) * noise * beatTimer * intensity;
-    const dropY  = (Math.random() * noise * 0.2 * beatTimer) + (bassEnergy * 80 * intensity);
-    
-    // Control Bar Math (Stays anchored at the top)
-    const barWidth = 240 + smoothedBins[5] * 50 * react;
-    const barY = -100;
-
-    // Puppet Skeleton Nodes - ALL nodes now inherit the `dropY` so the whole body sinks
-    const headRadius = 25 + (hole * 100);
-    const headCenter = { x: bJerkX, y: 80 + dropY };
-    const pelvis     = { x: bJerkX * 2, y: 220 + dropY };
-    
-    // Limbs react to different frequency bins, stretching DOWN and OUT
-    const leftArmTwitch = smoothedBins[12] * 120 * react * intensity;
-    const rightArmTwitch = smoothedBins[18] * 120 * react * intensity;
-    const leftLegTwitch = smoothedBins[2] * 100 * react * intensity;
-    const rightLegTwitch = smoothedBins[6] * 100 * react * intensity;
-
-    const lElbow = { x: -60 - leftArmTwitch, y: 130 + dropY + leftArmTwitch * 0.3 };
-    const lHand  = { x: -80 - leftArmTwitch * 1.5, y: 200 + dropY + leftArmTwitch * 0.8 };
-    
-    const rElbow = { x: 60 + rightArmTwitch, y: 130 + dropY + rightArmTwitch * 0.3 };
-    const rHand  = { x: 80 + rightArmTwitch * 1.5, y: 200 + dropY + rightArmTwitch * 0.8 };
-
-    const lKnee  = { x: -40 - leftLegTwitch, y: 320 + dropY + leftLegTwitch * 0.5 };
-    const lFoot  = { x: -50 - leftLegTwitch * 0.5, y: 400 + dropY + leftLegTwitch * 1.2 };
-
-    const rKnee  = { x: 40 + rightLegTwitch, y: 320 + dropY + rightLegTwitch * 0.5 };
-    const rFoot  = { x: 50 + rightLegTwitch * 0.5, y: 400 + dropY + rightLegTwitch * 1.2 };
-
-    // 1. Draw the Control Strings
-    ctx.strokeStyle = pal.alt;
-    ctx.lineWidth = thick * 0.8;
-    ctx.globalAlpha = 0.6;
-    ctx.beginPath();
-    
-    // Connect bar points to puppet joints
-    const drawString = (startX, targetX, targetY) => {
-        ctx.moveTo(startX, barY);
-        // Strings bend slightly based on the horizontal jitter
-        ctx.quadraticCurveTo(startX + (targetX-startX)/2 + bJerkX, barY + (targetY-barY)/2, targetX, targetY);
-    };
-
-    drawString(-barWidth/2, lHand.x, lHand.y); // Left string to hand
-    drawString(-barWidth/4, lKnee.x, lKnee.y); // Inner left string to knee
-    drawString(0, headCenter.x, headCenter.y - headRadius); // Center to head
-    drawString(barWidth/4, rKnee.x, rKnee.y);  // Inner right to knee
-    drawString(barWidth/2, rHand.x, rHand.y);  // Right string to hand
-    ctx.stroke();
-
-    // 2. Draw Puppeteer Control Bar (The Cross)
-    ctx.lineJoin = 'miter';
-    ctx.strokeStyle = pal.fg;
-    ctx.lineWidth = thick * 3;
-    ctx.globalAlpha = 1;
-    ctx.beginPath();
-    ctx.moveTo(-barWidth/2 - 20, barY);
-    ctx.lineTo(barWidth/2 + 20, barY);
-    ctx.moveTo(0, barY - 40);
-    ctx.lineTo(0, barY + 40);
-    ctx.stroke();
-
-    // 3. Draw The Puppet (Bone Structure)
-    ctx.strokeStyle = pal.primary;
-    ctx.lineWidth = thick * 2.5 + beatTimer * 2;
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = pal.glow;
-    ctx.beginPath();
-
-    // Head
-    ctx.arc(headCenter.x, headCenter.y, headRadius, 0, Math.PI * 2);
-    
-    // Spine
-    ctx.moveTo(headCenter.x, headCenter.y + headRadius);
-    ctx.lineTo(pelvis.x, pelvis.y);
-
-    // Arms
-    ctx.moveTo(headCenter.x, headCenter.y + headRadius + 10);
-    ctx.lineTo(lElbow.x, lElbow.y);
-    ctx.lineTo(lHand.x, lHand.y);
-
-    ctx.moveTo(headCenter.x, headCenter.y + headRadius + 10);
-    ctx.lineTo(rElbow.x, rElbow.y);
-    ctx.lineTo(rHand.x, rHand.y);
-
-    // Legs
-    ctx.moveTo(pelvis.x, pelvis.y);
-    ctx.lineTo(lKnee.x, lKnee.y);
-    ctx.lineTo(lFoot.x, lFoot.y);
-
-    ctx.moveTo(pelvis.x, pelvis.y);
-    ctx.lineTo(rKnee.x, rKnee.y);
-    ctx.lineTo(rFoot.x, rFoot.y);
-
-    ctx.stroke();
-    ctx.shadowBlur = 0; // reset
 }
 
 function drawVignette(W, H) {
