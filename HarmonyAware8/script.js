@@ -54,6 +54,7 @@ let spinDirection = 1;
 let erraticSpike = 0;
 let currentScale = 1.0;
 let chromaOffset = 0;
+let lastPaletteSwap = 0; // <-- ADD THIS LINE
 
 let abominationPaths = [];
 let erraticPhase = 0;
@@ -111,8 +112,20 @@ addStick(monster.core, monster.r1, 50); addStick(monster.r1, monster.r2, 50); ad
 // ============================================================
 
 function resizeCanvas() {
-    canvas.width  = window.innerWidth; 
-    canvas.height = window.innerHeight;
+    const phoneMaxWidth = 400;
+    let w = Math.min(window.innerWidth, phoneMaxWidth);
+    let h = w * (16 / 9);
+    
+    // Jika tinggi melebihi layar, sesuaikan ulang berdasarkan tinggi
+    if (h > window.innerHeight) { 
+        h = window.innerHeight; 
+        w = h * (9 / 16); 
+    }
+    
+    canvas.width  = w; 
+    canvas.height = h;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
 }
 window.addEventListener('resize', resizeCanvas);
 
@@ -209,6 +222,25 @@ function renderLoop() {
         monster.l3.x += (Math.random() - 0.5) * 60 * intensity;
         monster.r3.x += (Math.random() - 0.5) * 60 * intensity;
         monster.c4.x += (Math.random() - 0.5) * 80 * intensity;
+
+        // ============================================================
+        // NEW: AUTOMATIC BEAT-DRIVEN PALETTE SWAP (1.5s THROTTLE)
+        // ============================================================
+        const now = Date.now();
+        if (now - lastPaletteSwap > 1500) { 
+            lastPaletteSwap = now;
+            
+            // Get all palettes except the current one to guarantee a change
+            const keys = Object.keys(PALETTES).filter(k => k !== currentPaletteKey);
+            currentPaletteKey = keys[Math.floor(Math.random() * keys.length)];
+            pal = PALETTES[currentPaletteKey];
+
+            // Update the UI preset buttons to reflect the automated swap
+            document.querySelectorAll('.preset-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.preset === currentPaletteKey);
+            });
+        }
+        // ============================================================
     }
     lastBass = eB;
 
@@ -263,7 +295,7 @@ function renderLoop() {
     ctx.rotate(swing);
     ctx.scale(currentScale, currentScale);
 
-    processRagdollPhysics(intensity);
+    processRagdollPhysics(intensity, W, H, currentScale);
     drawEntity(intensity);
 
     ctx.restore();
@@ -274,7 +306,7 @@ function renderLoop() {
 // SCENE & PHYSICS COMPONENTS
 // ============================================================
 
-function processRagdollPhysics(intensity) {
+function processRagdollPhysics(intensity, W, H, currentScale) {
     const react = parseFloat(ctrlReact.value);
     const noise = parseFloat(ctrlNoise.value);
     
@@ -292,11 +324,9 @@ function processRagdollPhysics(intensity) {
     const barY = -50;
     const bJerkX = (Math.random() - 0.5) * noise * beatTimer * intensity * 5;
 
-    // The main string pulls the core back to its resting spot
     monster.core.x += (bJerkX - monster.core.x) * 0.2;
-    monster.core.y += ((barY + 140) - monster.core.y) * 0.15; // Spring back up after dropping
+    monster.core.y += ((barY + 140) - monster.core.y) * 0.15; 
 
-    // Inject audio jitter directly into tentacles
     monster.l3.x += (Math.random() - 0.5) * smoothedBins[2] * react * intensity * 15;
     monster.r3.x += (Math.random() - 0.5) * smoothedBins[6] * react * intensity * 15;
 
@@ -314,6 +344,35 @@ function processRagdollPhysics(intensity) {
 
             s.p1.x -= offsetX; s.p1.y -= offsetY;
             s.p2.x += offsetX; s.p2.y += offsetY;
+        }
+    }
+
+    // 4. THE CAGE (Boundary Collisions)
+    // Kalkulasi batas tembok relatif terhadap origin canvas saat ini (tengah atas)
+    const padding = 25; 
+    const leftWall = (-W / 2 + padding) / currentScale;
+    const rightWall = (W / 2 - padding) / currentScale;
+    const floor = (H * 0.85 - padding) / currentScale; 
+
+    for (let p of points) {
+        // Tembok Kiri
+        if (p.x < leftWall) {
+            let vx = p.x - p.oldx;
+            p.x = leftWall;
+            p.oldx = p.x + vx * 0.6; // Efek memantul (0.6 adalah sisa energi)
+        } 
+        // Tembok Kanan
+        else if (p.x > rightWall) {
+            let vx = p.x - p.oldx;
+            p.x = rightWall;
+            p.oldx = p.x + vx * 0.6;
+        }
+        
+        // Lantai
+        if (p.y > floor) {
+            let vy = p.y - p.oldy;
+            p.y = floor;
+            p.oldy = p.y + vy * 0.6;
         }
     }
 }
