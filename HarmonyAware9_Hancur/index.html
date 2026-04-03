@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>The Corrupted Core</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+  <div id="phone-wrap">
+
+    <canvas id="canvas"></canvas>
+    <div id="beatflash"></div>
+
+    <!-- ── HUD ── -->
+    <div id="hud">
+      <span id="hud-mode">IDLE</span>
+      <span>SYSTEM.VOID</span>
+      <span id="hud-bpm">-- BPM</span>
+    </div>
+
+    <!-- ── INIT OVERLAY ── -->
+    <div id="overlay">
+      <div class="ov-title">CORRUPTED CORE</div>
+      <div class="ov-sub">Audiovisual Organism v2.0</div>
+      <div class="ov-border">
+        <div class="ov-sysline">
+          SYS_STATUS&nbsp;:&nbsp;IDLE<br>
+          AUDIO_CORE&nbsp;:&nbsp;OFFLINE<br>
+          AWAITING SIGNAL...
+        </div>
+        <button id="startBtn">&#9658; INITIALIZE</button>
+        <p class="ov-note">
+          Requests desktop / tab audio capture.<br>
+          In the browser dialog, check <strong>"Share audio"</strong>.
+        </p>
+      </div>
+    </div>
+
+    <!-- ── PARAMETER PANEL ── -->
+    <div id="controls">
+      <div class="ctrl-handle" id="ctrlHandle"></div>
+      <div class="ctrl-header">// PARAMETER MATRIX</div>
+
+      <div class="ctrl-grid">
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>BASS SENS</span><span class="ctrl-val" id="v-bass">0.80</span></div>
+          <input type="range" id="s-bass" min="0" max="2" step="0.01" value="0.8">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>TREBLE SENS</span><span class="ctrl-val" id="v-treble">0.80</span></div>
+          <input type="range" id="s-treble" min="0" max="2" step="0.01" value="0.8">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>CORE SIZE</span><span class="ctrl-val" id="v-coresize">0.60</span></div>
+          <input type="range" id="s-coresize" min="0.1" max="1.5" step="0.01" value="0.6">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>MORPH SPEED</span><span class="ctrl-val" id="v-morphspeed">1.00</span></div>
+          <input type="range" id="s-morphspeed" min="0.1" max="4" step="0.01" value="1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>GRID WARP</span><span class="ctrl-val" id="v-gridwarp">0.50</span></div>
+          <input type="range" id="s-gridwarp" min="0" max="2" step="0.01" value="0.5">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>SHARD CHAOS</span><span class="ctrl-val" id="v-shardchaos">0.50</span></div>
+          <input type="range" id="s-shardchaos" min="0" max="2" step="0.01" value="0.5">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>MOTION BLUR</span><span class="ctrl-val" id="v-blur">0.30</span></div>
+          <input type="range" id="s-blur" min="0.05" max="0.9" step="0.01" value="0.3">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label"><span>GLOW</span><span class="ctrl-val" id="v-glow">0.50</span></div>
+          <input type="range" id="s-glow" min="0" max="1" step="0.01" value="0.5">
+        </div>
+      </div>
+
+      <div class="ctrl-header" style="margin-top:10px">// PRESETS</div>
+      <div class="preset-row">
+        <button class="preset-btn active" data-preset="corrupted">CORRUPTED</button>
+        <button class="preset-btn"        data-preset="void">VOID</button>
+        <button class="preset-btn"        data-preset="rage">RAGE</button>
+        <button class="preset-btn"        data-preset="ghost">GHOST</button>
+      </div>
+    </div>
+
+    <!-- ── PARAMS TOGGLE ── -->
+    <button id="toggleCtrl">&#9881; PARAMS</button>
+
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
