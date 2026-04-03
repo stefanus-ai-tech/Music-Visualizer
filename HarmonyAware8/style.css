@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&family=Nosifer&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --blood-red: #8a0303;
+    --bone-white: #e3dac9;
+    --sick-yellow: #5e5a19;
+    --void: #050000;
+    --panel-bg: rgba(5, 0, 0, 0.95);
+    --border-glow: rgba(138, 3, 3, 0.4);
+}
+
+body {
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Courier Prime', monospace;
+    cursor: crosshair;
+}
+
+/* Vertical "Strings" Overlay instead of just horizontal scanlines */
+#scanlines {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    pointer-events: none;
+    background: 
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.3) 2px, rgba(0, 0, 0, 0.3) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(10, 0, 0, 0.1) 4px, rgba(10, 0, 0, 0.1) 5px);
+    animation: jitter 0.2s infinite;
+}
+
+@keyframes jitter {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(1px, -1px); }
+    100% { transform: translate(0, 0); }
+}
+
+#overlay {
+    position: absolute;
+    z-index: 10;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle, rgba(20,0,0,0.9) 0%, rgba(0,0,0,1) 100%);
+}
+
+.overlay-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    padding: 48px 44px;
+    border: 1px solid var(--blood-red);
+    border-radius: 2px;
+    box-shadow: inset 0 0 50px rgba(138, 3, 3, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.title-n3 {
+    font-family: 'Nosifer', display;
+    font-size: 50px;
+    color: var(--blood-red);
+    text-shadow: 0 0 10px rgba(138,3,3,0.8);
+    position: relative;
+    animation: violentTwitch 3s infinite;
+}
+
+@keyframes violentTwitch {
+    0%, 95%, 100% { transform: none; }
+    96% { transform: translate(-5px, 2px) rotate(-2deg); }
+    98% { transform: translate(5px, -2px) rotate(2deg); }
+}
+
+.title-sub {
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px;
+    letter-spacing: 0.25em;
+    color: var(--bone-white);
+    opacity: 0.7;
+}
+
+.sys-line {
+    font-size: 11px;
+    color: var(--blood-red);
+    letter-spacing: 0.1em;
+}
+
+#startBtn {
+    padding: 12px 44px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    background: transparent;
+    color: var(--blood-red);
+    border: 1px dashed var(--blood-red);
+    cursor: pointer;
+    letter-spacing: 0.2em;
+    transition: all 0.1s ease;
+}
+
+#startBtn:hover {
+    background: var(--blood-red);
+    color: #000;
+    border-style: solid;
+}
+
+.hint { font-size: 10px; color: rgba(227, 218, 201, 0.4); }
+
+canvas { display: block; margin: 0 auto; height: 100vh; width: 100vw; }
+
+#controlsPanel {
+    position: fixed;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 230px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-glow);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    color: var(--bone-white);
+    z-index: 20;
+}
+
+.panel-header {
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--blood-red);
+    border-bottom: 1px solid var(--blood-red);
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.preset-btn {
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px;
+    background: transparent;
+    color: rgba(227, 218, 201, 0.5);
+    border: 1px solid rgba(138, 3, 3, 0.3);
+    padding: 6px 4px;
+    cursor: pointer;
+}
+
+.preset-btn.active {
+    background: rgba(138, 3, 3, 0.2);
+    color: var(--blood-red);
+    border-color: var(--blood-red);
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 14px;
+    width: 2px;
+    background: var(--blood-red);
+    cursor: pointer;
+    margin-top: -6px;
+}
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 1px;
+    background: rgba(138, 3, 3, 0.4);
+}

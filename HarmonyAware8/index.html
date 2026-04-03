@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARIONETTE // STRING PROTOCOL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=Nosifer&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="scanlines"></div>
+    <div id="overlay">
+        <div class="overlay-inner">
+            <div class="glitch-wrap">
+                <div class="title-block">
+                    <span class="title-n3" data-text="PUPPETEER">PUPPETEER</span>
+                    <span class="title-sub">// STRING PROTOCOL · HORROR BUILD //</span>
+                </div>
+            </div>
+            <div class="sys-info">
+                <span class="sys-line">[SYS] SEANCE ENGINE v3.7 ONLINE</span>
+                <span class="sys-line">[SYS] AWAITING VICTIM INPUT...</span>
+            </div>
+            <button id="startBtn">[ AWAKEN ]</button>
+            <p class="hint">► Select Tab or Screen → Enable "Share Audio"</p>
+        </div>
+    </div>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="controlsPanel" class="hidden">
+        <div class="panel-section">
+            <div class="panel-header">// NIGHTMARES</div>
+            <div class="preset-grid">
+                <button class="preset-btn active" data-preset="blood">BLOOD</button>
+                <button class="preset-btn" data-preset="asylum">ASYLUM</button>
+                <button class="preset-btn" data-preset="rust">RUST</button>
+                <button class="preset-btn" data-preset="ghost">GHOST</button>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">// TWITCH METRICS</div>
+            <label>Erratic Twitch (Snapping)
+                <input type="range" id="ctrlIntensity" min="0" max="2" step="0.1" value="1.8">
+            </label>
+            <label>String Count (Density)
+                <input type="range" id="ctrlRings" min="20" max="100" step="1" value="45">
+            </label>
+            <label>Fear Reactivity
+                <input type="range" id="ctrlReact" min="0" max="2" step="0.05" value="1.2">
+            </label>
+            <label>Bone Distortion (Noise)
+                <input type="range" id="ctrlNoise" min="0" max="50" step="1" value="40">
+            </label>
+            <label>Noose Spin
+                <input type="range" id="ctrlSpin" min="-2" max="2" step="0.1" value="0.1">
+            </label>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">// ANATOMY</div>
+            <label>Void Size
+                <input type="range" id="ctrlHole" min="0" max="0.5" step="0.01" value="0.15">
+            </label>
+            <label>Wire Thickness
+                <input type="range" id="ctrlThickness" min="0.5" max="3" step="0.1" value="0.8">
+            </label>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
