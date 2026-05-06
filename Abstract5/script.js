@@ -16,18 +16,19 @@ const ctrlHole = document.getElementById('ctrlHole');
 const ctrlThickness = document.getElementById('ctrlThickness');
 const ctrlIntensity = document.getElementById('ctrlIntensity');
 const ctrlBounce = document.getElementById('ctrlBounce');
+const ctrlExplosion = document.getElementById('ctrlExplosion');
 
 const PALETTES = {
-    cyberfluid: { label: 'CYBERFLUID', bg: '#020616', colors: ['#00f6ff', '#ff3df2', '#fcee09'], accents: ['#ffffff', '#00ffb3', '#7d5cff'] },
-    plasma: { label: 'PLASMA', bg: '#08020f', colors: ['#ff2bd6', '#7b2cff', '#00e5ff'], accents: ['#ffffff', '#fffb7d', '#ff6a00'] },
-    abyss: { label: 'ABYSS', bg: '#020611', colors: ['#86e8ff', '#2192da', '#9e82e8'], accents: ['#ffffff', '#64fff1', '#071a48'] },
-    indigo: { label: 'INDIGO', bg: '#050619', colors: ['#c4ccff', '#7c8df6', '#3745bb'], accents: ['#ffffff', '#5669ff', '#82d8ff'] },
-    lilac: { label: 'LILAC', bg: '#100818', colors: ['#e6d1ff', '#c49be8', '#f0bce4'], accents: ['#ffffff', '#c99aff', '#7de8ff'] },
-    crimson: { label: 'CRIMSON', bg: '#070408', colors: ['#f2e8d5', '#d10f2f', '#821020'], accents: ['#ffffff', '#ff2845', '#f0b982'] },
-    opal: { label: 'OPAL', bg: '#061014', colors: ['#d8fff5', '#b7dcff', '#ffd4ef'], accents: ['#ffffff', '#fff0ad', '#78d9ff'] },
-    toxic: { label: 'TOXIC', bg: '#030a05', colors: ['#c8ff35', '#00ffaa', '#00a35a'], accents: ['#ffffff', '#f4ff7d', '#0bff00'] },
-    ember: { label: 'EMBER', bg: '#090503', colors: ['#ffeac4', '#f56b21', '#bd2a15'], accents: ['#ffffff', '#ffb13d', '#ff2845'] },
-    mono: { label: 'MONO', bg: '#050607', colors: ['#ffffff', '#9ea8b5', '#303945'], accents: ['#ffffff', '#00f6ff', '#ff3df2'] }
+    cyberfluid: { label: 'CYBERFLUID', bg: '#020616', colors: ['#00f6ff', '#00ffb3', '#7d5cff', '#ff3df2', '#fcee09'], accents: ['#ffffff', '#7affff', '#ff7ae8'] },
+    plasma: { label: 'PLASMA', bg: '#08020f', colors: ['#ff6bd6', '#ff2bd6', '#7b2cff', '#00e5ff', '#fffb7d'], accents: ['#ffffff', '#ff6a00', '#9bf8ff'] },
+    abyss: { label: 'ABYSS', bg: '#020611', colors: ['#d5fbff', '#86e8ff', '#2192da', '#9e82e8', '#64fff1'], accents: ['#ffffff', '#8ec5ff', '#c29dff'] },
+    indigo: { label: 'INDIGO', bg: '#050619', colors: ['#c4ccff', '#82d8ff', '#7c8df6', '#3745bb', '#9d7cff'], accents: ['#ffffff', '#5669ff', '#b8e7ff'] },
+    lilac: { label: 'LILAC', bg: '#100818', colors: ['#e6d1ff', '#f0bce4', '#c49be8', '#c99aff', '#7de8ff'], accents: ['#ffffff', '#ffb3e8', '#b8f0ff'] },
+    crimson: { label: 'CRIMSON', bg: '#070408', colors: ['#f2e8d5', '#f0b982', '#ff2845', '#d10f2f', '#821020'], accents: ['#ffffff', '#ffd58f', '#ff7c9e'] },
+    opal: { label: 'OPAL', bg: '#061014', colors: ['#d8fff5', '#b7dcff', '#78d9ff', '#ffd4ef', '#fff0ad'], accents: ['#ffffff', '#b8ffd9', '#ffc6e5'] },
+    toxic: { label: 'TOXIC', bg: '#030a05', colors: ['#f4ff7d', '#c8ff35', '#0bff00', '#00ffaa', '#00a35a'], accents: ['#ffffff', '#eeff9f', '#7affc8'] },
+    ember: { label: 'EMBER', bg: '#090503', colors: ['#ffeac4', '#ffb13d', '#f56b21', '#ff2845', '#bd2a15'], accents: ['#ffffff', '#ffd98e', '#ff8c66'] },
+    mono: { label: 'MONO', bg: '#050607', colors: ['#ffffff', '#d8e3f0', '#9ea8b5', '#5d6a7d', '#303945'], accents: ['#ffffff', '#00f6ff', '#ff3df2'] }
 };
 
 let currentPaletteKey = 'cyberfluid';
@@ -124,6 +125,7 @@ uniform sampler2D uSource;
 uniform vec2 uTexel;
 uniform float uDt;
 uniform float uDissipation;
+uniform float uEdgeLoss;
 in vec2 vUv;
 out vec4 fragColor;
 vec4 bilerp(sampler2D sam, vec2 uv) {
@@ -132,7 +134,13 @@ vec4 bilerp(sampler2D sam, vec2 uv) {
 void main() {
     vec2 vel = texture(uVelocity, vUv).xy;
     vec2 coord = vUv - vel * uDt * uTexel * 70.0;
-    fragColor = bilerp(uSource, coord) * uDissipation;
+    vec4 value = vec4(0.0);
+    if (coord.x >= 0.0 && coord.x <= 1.0 && coord.y >= 0.0 && coord.y <= 1.0) {
+        value = bilerp(uSource, coord);
+    }
+    float edge = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
+    float openBoundary = smoothstep(0.0, max(0.0001, uEdgeLoss), edge);
+    fragColor = value * uDissipation * openBoundary;
 }`;
 
 const divergenceFrag = `#version 300 es
@@ -244,6 +252,10 @@ uniform sampler2D uBloom;
 uniform vec3 uColorA;
 uniform vec3 uColorB;
 uniform vec3 uColorC;
+uniform vec3 uColorD;
+uniform vec3 uColorE;
+uniform vec3 uAccentA;
+uniform vec3 uAccentB;
 uniform vec3 uBg;
 uniform float uTime;
 uniform float uBass;
@@ -261,17 +273,28 @@ void main() {
     vec3 d = texture(uDensity, uv + vel * 0.008).rgb;
     float mag = length(d);
     float speed = length(vel);
-    d = d / (1.0 + d * 1.65);
+    d = min(d, vec3(1.35));
+    d = d / (1.0 + d * 2.35);
     vec3 color = uBg * 0.72;
-    color = mix(color, uColorA, smoothstep(0.04, 0.72, d.r) * 0.72);
-    color = mix(color, uColorB, smoothstep(0.06, 0.82, d.g) * 0.62);
-    color = mix(color, uColorC, smoothstep(0.08, 0.95, d.b) * 0.54);
-    color += normalize(uColorA + uColorB + uColorC + 0.001) * speed * 0.18;
-    color += texture(uBloom, uv).rgb * uBloomStrength * 0.32;
+    float primary = smoothstep(0.04, 0.72, d.r);
+    float secondary = smoothstep(0.06, 0.82, d.g);
+    float tertiary = smoothstep(0.08, 0.95, d.b);
+    float mixMag = clamp(mag * 1.35, 0.0, 1.0);
+    float tip = smoothstep(0.02, 0.22, speed) * (1.0 - smoothstep(0.22, 1.0, mag));
+    float rim = smoothstep(0.12, 0.45, speed) * (0.35 + uTreble * 0.8);
+    color = mix(color, uColorA, primary * 0.62);
+    color = mix(color, uColorB, secondary * 0.58);
+    color = mix(color, uColorC, tertiary * 0.52);
+    color = mix(color, uColorD, mixMag * 0.44);
+    color = mix(color, uColorE, smoothstep(0.18, 0.72, mag + speed * 0.35) * 0.36);
+    color += mix(uAccentA, uAccentB, clamp(speed * 1.8 + uBass * 0.8, 0.0, 1.0)) * tip * 0.42;
+    color += uAccentB * rim * 0.22;
+    color += normalize(uColorA + uColorB + uColorC + uColorD + uColorE + 0.001) * speed * 0.14;
+    color += min(texture(uBloom, uv).rgb, vec3(1.0)) * uBloomStrength * 0.2;
     color *= 0.52 + uIntensity * 0.34;
     color += vec3(hash(uv * uResolution + uTime) - 0.5) * 0.025;
     color += vec3(0.0, 0.8, 1.0) * (sin(uv.y * uResolution.y * 2.2) * 0.5 + 0.5) * 0.01;
-    color = color / (1.0 + color * 0.92);
+    color = color / (1.0 + color * 1.45);
     float vignette = smoothstep(0.92, 0.22, distance(uv, vec2(0.5)));
     color *= vignette;
     fragColor = vec4(pow(max(color, 0.0), vec3(0.88)), 1.0);
@@ -425,6 +448,7 @@ function advect(buffer, source, dt, dissipation) {
     gl.uniform2f(prg.uniforms.uTexel, texel[0], texel[1]);
     gl.uniform1f(prg.uniforms.uDt, dt);
     gl.uniform1f(prg.uniforms.uDissipation, dissipation);
+    gl.uniform1f(prg.uniforms.uEdgeLoss, buffer === density ? 0.035 : 0.02);
     target(buffer.write);
     draw();
     buffer.swap();
@@ -435,7 +459,7 @@ function step(dt) {
     const vorticity = Number(ctrlNoise.value) * (0.55 + mid * 1.5);
     const densityDissipation = Number(ctrlHole.value);
 
-    advect(velocity, velocity, dt, 0.988);
+    advect(velocity, velocity, dt, 0.994);
     advect(density, density, dt, densityDissipation);
 
     bindProgram(programs.curl);
@@ -485,13 +509,13 @@ function injectAudioForces() {
     const bassForce = Number(ctrlBounce.value);
     const densityGain = Number(ctrlIntensity.value);
     const spin = Number(ctrlSpin.value);
-    const colors = [rgb(pal.colors[0]), rgb(pal.colors[1]), rgb(pal.colors[2])];
+    const colors = pal.colors.map(rgb);
 
     const beatKick = beat * (1 + bass * 2.5);
     const centerPush = (0.8 + bass * 5.2) * bassForce * react;
     const angle = time * 0.9 + spin * 1.7;
     splat(velocity, 0.5, 0.5, Math.cos(angle) * centerPush, Math.sin(angle) * centerPush, 0, 0.006 + bass * 0.018 + beatKick * 0.018);
-    splat(density, 0.5, 0.5, colors[0][0] * densityGain * (0.34 + beatKick * 1.15), colors[0][1] * densityGain * (0.34 + beatKick * 1.15), colors[0][2] * densityGain * (0.34 + beatKick * 1.15), 0.01 + beatKick * 0.02);
+    splat(density, 0.5, 0.5, colors[0][0] * densityGain * (0.26 + beatKick * 0.9), colors[0][1] * densityGain * (0.26 + beatKick * 0.9), colors[0][2] * densityGain * (0.26 + beatKick * 0.9), 0.01 + beatKick * 0.02);
 
     const emitters = 5;
     for (let i = 0; i < emitters; i++) {
@@ -502,45 +526,54 @@ function injectAudioForces() {
         const force = (0.18 + band * 2.7 + mid * 1.6) * react;
         const tangent = a + Math.PI * 0.5 + spin * 0.25;
         splat(velocity, x, y, Math.cos(tangent) * force, Math.sin(tangent) * force, 0, 0.0035 + band * 0.012);
-        const c = colors[i % colors.length];
+        const c = colors[(i * 2) % colors.length];
         splat(density, x, y, c[0] * densityGain * (0.12 + band * 0.48), c[1] * densityGain * (0.12 + band * 0.48), c[2] * densityGain * (0.12 + band * 0.48), 0.004 + treble * 0.008);
     }
 
-    while (pendingExplosions > 0) {
-        fluidExplosion();
-        pendingExplosions -= 1;
+    while (pendingExplosions.length) {
+        fluidExplosion(pendingExplosions.shift());
     }
 }
 
-function fluidExplosion() {
+function fluidExplosion(strength = 1) {
     const react = Number(ctrlReact.value);
     const bassForce = Number(ctrlBounce.value);
+    const explosionGain = Number(ctrlExplosion?.value || 1);
     const densityGain = Number(ctrlIntensity.value);
-    const colors = [rgb(pal.colors[0]), rgb(pal.colors[1]), rgb(pal.colors[2]), rgb(pal.accents[1] || pal.colors[1])];
+    const colors = [...pal.colors.map(rgb), ...pal.accents.slice(0, 2).map(rgb)];
     const cx = 0.5 + (Math.random() - 0.5) * 0.06;
     const cy = 0.5 + (Math.random() - 0.5) * 0.06;
-    const power = (3.2 + bass * 8.5) * Math.max(0.25, bassForce) * react;
-    const densityPower = densityGain * (0.7 + bass * 1.4);
+    const blast = Math.max(0.55, strength) * (1 + beat * 0.35);
+    const power = (7.5 + bass * 18.0 + blast * 7.0) * Math.max(0.25, bassForce) * react * explosionGain;
+    const densityPower = densityGain * (0.16 + bass * 0.28 + blast * 0.05) * (0.78 + explosionGain * 0.24);
 
-    splat(velocity, cx, cy, 0, 0, 0, 0.045 + bass * 0.035);
-    for (let i = 0; i < 18; i++) {
-        const t = i / 18;
+    splat(velocity, cx, cy, (Math.random() - 0.5) * power * 0.35, (Math.random() - 0.5) * power * 0.35, 0, 0.065 + bass * 0.055 + blast * 0.02);
+    for (let i = 0; i < 28; i++) {
+        const t = i / 28;
         const a = t * Math.PI * 2 + time * 0.7 + Math.sin(i * 17.13) * 0.28;
-        const ring = 0.025 + (i % 3) * 0.018 + Math.random() * 0.02;
+        const ring = 0.018 + (i % 4) * 0.018 + Math.random() * 0.035;
         const x = cx + Math.cos(a) * ring;
         const y = cy + Math.sin(a) * ring;
-        const radial = power * (0.65 + Math.random() * 0.7);
-        const swirl = power * 0.32 * (i % 2 === 0 ? 1 : -1);
+        const radial = power * (1.05 + Math.random() * 1.45);
+        const swirl = power * (0.5 + mid * 0.7) * (i % 2 === 0 ? 1 : -1);
         const vx = Math.cos(a) * radial + Math.cos(a + Math.PI * 0.5) * swirl;
         const vy = Math.sin(a) * radial + Math.sin(a + Math.PI * 0.5) * swirl;
-        const c = colors[i % colors.length];
+        const c = colors[(i * 3) % colors.length];
 
-        splat(velocity, x, y, vx, vy, 0, 0.008 + Math.random() * 0.015 + bass * 0.012);
-        splat(density, x, y, c[0] * densityPower * 0.85, c[1] * densityPower * 0.85, c[2] * densityPower * 0.85, 0.01 + Math.random() * 0.018);
+        splat(velocity, x, y, vx, vy, 0, 0.012 + Math.random() * 0.026 + bass * 0.018);
+        splat(density, x, y, c[0] * densityPower * 0.28, c[1] * densityPower * 0.28, c[2] * densityPower * 0.28, 0.006 + Math.random() * 0.01);
     }
 
-    const core = colors[0];
-    splat(density, cx, cy, core[0] * densityPower * 1.35, core[1] * densityPower * 1.35, core[2] * densityPower * 1.35, 0.025 + bass * 0.025);
+    for (let i = 0; i < 8; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const x = 0.5 + Math.cos(a) * (0.16 + Math.random() * 0.26);
+        const y = 0.5 + Math.sin(a) * (0.12 + Math.random() * 0.22);
+        const recoil = power * (0.55 + Math.random() * 0.75);
+        splat(velocity, x, y, Math.cos(a) * recoil, Math.sin(a) * recoil, 0, 0.018 + blast * 0.012);
+    }
+
+    const core = colors[Math.floor((time * 10) % colors.length)];
+    splat(density, cx, cy, core[0] * densityPower * 0.42, core[1] * densityPower * 0.42, core[2] * densityPower * 0.42, 0.018 + bass * 0.014 + blast * 0.006);
 }
 
 function bloomPass() {
@@ -567,10 +600,18 @@ function render() {
     const a = rgb(pal.colors[0]);
     const b = rgb(pal.colors[1]);
     const c = rgb(pal.colors[2]);
+    const d = rgb(pal.colors[3] || pal.colors[0]);
+    const e = rgb(pal.colors[4] || pal.colors[1]);
+    const accentA = rgb(pal.accents[0] || pal.colors[0]);
+    const accentB = rgb(pal.accents[1] || pal.colors[2]);
     const bg = rgb(pal.bg);
     gl.uniform3f(prg.uniforms.uColorA, a[0], a[1], a[2]);
     gl.uniform3f(prg.uniforms.uColorB, b[0], b[1], b[2]);
     gl.uniform3f(prg.uniforms.uColorC, c[0], c[1], c[2]);
+    gl.uniform3f(prg.uniforms.uColorD, d[0], d[1], d[2]);
+    gl.uniform3f(prg.uniforms.uColorE, e[0], e[1], e[2]);
+    gl.uniform3f(prg.uniforms.uAccentA, accentA[0], accentA[1], accentA[2]);
+    gl.uniform3f(prg.uniforms.uAccentB, accentB[0], accentB[1], accentB[2]);
     gl.uniform3f(prg.uniforms.uBg, bg[0], bg[1], bg[2]);
     gl.uniform1f(prg.uniforms.uTime, time);
     gl.uniform1f(prg.uniforms.uBass, bass);
@@ -624,11 +665,14 @@ function updateAudio() {
     bass = bass * 0.78 + b * 0.22;
     mid = mid * 0.82 + m * 0.18;
     treble = treble * 0.84 + t * 0.16;
-    const isBeat = b - lastBass > 0.018 && b > 0.052;
+    const beatDelta = b - lastBass;
+    const isBeat = beatDelta > 0.012 && b > 0.04;
     beat = Math.max(0, beat - 0.04);
     if (isBeat) {
         beat = Math.min(1.65, 1 + Number(ctrlBounce.value) * 0.18);
-        pendingExplosions = Math.min(2, pendingExplosions + 1);
+        const strength = Math.min(2.6, 0.75 + b * 2.3 + beatDelta * 8.5);
+        pendingExplosions.push(strength);
+        if (pendingExplosions.length > 3) pendingExplosions.shift();
     }
     lastBass = b;
 }
