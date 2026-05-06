@@ -18,28 +18,211 @@ const ctrlIntensity = document.getElementById('ctrlIntensity');
 
 const PALETTES = {
     blood: {
+        label: 'CRIMSON',
         bg: '#080609',
         paper: '#efe7d2',
         colors: ['#f3ead2', '#b90d20', '#6d0711', '#d6d9e3', '#a8b6c9', '#1e2427', '#f5cf9b'],
         accents: ['#fff8dc', '#e0212f', '#0e1014']
     },
     asylum: {
+        label: 'PORCELAIN',
         bg: '#04143b',
         paper: '#f4fbff',
         colors: ['#f6fbff', '#d7e8ff', '#9ebbe4', '#28549f', '#061d5d', '#b7b3df', '#eef4ff'],
         accents: ['#ffffff', '#071f66', '#6f8bc7']
     },
     rust: {
+        label: 'EMBER',
         bg: '#090805',
         paper: '#f0e2c2',
         colors: ['#fff4d7', '#d44c21', '#8d1e13', '#f29a45', '#2f2a24', '#c0b6a0', '#f9d47c'],
         accents: ['#fffaf0', '#ca151b', '#11100d']
     },
     ghost: {
+        label: 'ABYSS',
         bg: '#020510',
         paper: '#eef7ff',
         colors: ['#f7fbff', '#c6e9ff', '#61b8de', '#0d66a8', '#061a43', '#9d7ed9', '#101018'],
         accents: ['#ffffff', '#75fff0', '#070b1c']
+    },
+    lilac: {
+        label: 'LILAC',
+        bg: '#100a18',
+        paper: '#fbf5ff',
+        colors: ['#fbf5ff', '#e8d5ff', '#cda7ef', '#a06ad1', '#6b3c98', '#f2c7e6', '#d9ecff'],
+        accents: ['#ffffff', '#b98cff', '#4c2a6b']
+    },
+    indigo: {
+        label: 'INDIGO',
+        bg: '#050619',
+        paper: '#f3f0ff',
+        colors: ['#f3f0ff', '#c8ceff', '#7e8cf2', '#3942b0', '#171b66', '#0a0d31', '#86d8ff'],
+        accents: ['#ffffff', '#5264ff', '#05081f']
+    },
+    ultraviolet: {
+        label: 'UV',
+        bg: '#080013',
+        paper: '#fff7ff',
+        colors: ['#fff7ff', '#f063ff', '#b700ff', '#5b00c8', '#1b003d', '#00e5ff', '#ff2f92'],
+        accents: ['#ffffff', '#ffeb70', '#0d0024']
+    },
+    opal: {
+        label: 'OPAL',
+        bg: '#071012',
+        paper: '#fbfff8',
+        colors: ['#fbfff8', '#d9fff5', '#b9dcff', '#ffd6ef', '#d7c9ff', '#9be7d8', '#27333a'],
+        accents: ['#ffffff', '#fff0ad', '#8ed9ff']
+    },
+    pearl: {
+        label: 'PEARL',
+        bg: '#111112',
+        paper: '#fffdf3',
+        colors: ['#fffdf3', '#e8e1d4', '#c8c4bc', '#f8d8ce', '#d7e4ec', '#908b88', '#2b2b2d'],
+        accents: ['#ffffff', '#f3c8aa', '#5f6167']
+    },
+    cyanotype: {
+        label: 'CYAN',
+        bg: '#001a2e',
+        paper: '#eefaff',
+        colors: ['#eefaff', '#bfeaff', '#58c3f0', '#0878bc', '#004c82', '#002b55', '#d8f6ff'],
+        accents: ['#ffffff', '#00e2ff', '#001b34']
+    },
+    jade: {
+        label: 'JADE',
+        bg: '#03120d',
+        paper: '#f0fff6',
+        colors: ['#f0fff6', '#b8f5d4', '#58c48a', '#138854', '#075232', '#c9e6a8', '#111b14'],
+        accents: ['#ffffff', '#83ffbd', '#002517']
+    },
+    venom: {
+        label: 'VENOM',
+        bg: '#050b03',
+        paper: '#f7ffe9',
+        colors: ['#f7ffe9', '#d6ff54', '#8fff00', '#41a800', '#102800', '#1b1b16', '#e9ffb3'],
+        accents: ['#ffffff', '#baff00', '#071000']
+    },
+    coral: {
+        label: 'CORAL',
+        bg: '#160806',
+        paper: '#fff2e8',
+        colors: ['#fff2e8', '#ffb199', '#ff6f61', '#d73745', '#8b1d2c', '#ffcdb2', '#4b1715'],
+        accents: ['#ffffff', '#ffd56b', '#35100f']
+    },
+    sakura: {
+        label: 'SAKURA',
+        bg: '#160910',
+        paper: '#fff6f9',
+        colors: ['#fff6f9', '#ffd6e8', '#ff9ec8', '#e45b91', '#9a2f63', '#ede2ff', '#391627'],
+        accents: ['#ffffff', '#ffc2d9', '#5d1f3f']
+    },
+    glacier: {
+        label: 'GLACIER',
+        bg: '#061016',
+        paper: '#f6fcff',
+        colors: ['#f6fcff', '#d8f4ff', '#a2ddf2', '#5ba8ca', '#1d5f83', '#0b2f45', '#d6fff5'],
+        accents: ['#ffffff', '#9dffef', '#052337']
+    },
+    moss: {
+        label: 'MOSS',
+        bg: '#0b0e08',
+        paper: '#f2f0d8',
+        colors: ['#f2f0d8', '#c7c889', '#8f9d57', '#4d672e', '#263a1d', '#10170d', '#d8c7a0'],
+        accents: ['#fffce4', '#b6d36a', '#061006']
+    },
+    mineral: {
+        label: 'MINERAL',
+        bg: '#0b0c10',
+        paper: '#f0eee8',
+        colors: ['#f0eee8', '#b7b4ad', '#6c7a86', '#2f5966', '#19404a', '#a45d53', '#d8b785'],
+        accents: ['#ffffff', '#85e0db', '#181b20']
+    },
+    oil: {
+        label: 'OIL',
+        bg: '#040405',
+        paper: '#f2f0e6',
+        colors: ['#f2f0e6', '#22242a', '#5b4bd8', '#0bb3b8', '#e64d83', '#efb45b', '#071d24'],
+        accents: ['#ffffff', '#65fff4', '#ffdb70']
+    },
+    sunset: {
+        label: 'SUNSET',
+        bg: '#12090d',
+        paper: '#fff0d5',
+        colors: ['#fff0d5', '#ffb35c', '#ff6a3d', '#db245c', '#7f1f75', '#262052', '#ffd0a6'],
+        accents: ['#ffffff', '#ffd36e', '#2a163a']
+    },
+    noir: {
+        label: 'NOIR',
+        bg: '#020203',
+        paper: '#f2f0e8',
+        colors: ['#f2f0e8', '#c7c1b6', '#7c7c80', '#2f3136', '#090a0d', '#b0182e', '#31466f'],
+        accents: ['#ffffff', '#d4162c', '#050506']
+    },
+    candy: {
+        label: 'CANDY',
+        bg: '#140612',
+        paper: '#fff7fb',
+        colors: ['#fff7fb', '#ff7bc8', '#ff3f8e', '#8d5cff', '#42d8ff', '#ffe66d', '#4a1645'],
+        accents: ['#ffffff', '#7dffea', '#ffec99']
+    },
+    aurora: {
+        label: 'AURORA',
+        bg: '#020711',
+        paper: '#f4fff8',
+        colors: ['#f4fff8', '#74ffd1', '#3ec8ff', '#5768ff', '#a54dff', '#061d3a', '#d8fff0'],
+        accents: ['#ffffff', '#b7ff6a', '#081024']
+    },
+    wine: {
+        label: 'WINE',
+        bg: '#0e0308',
+        paper: '#fff3ec',
+        colors: ['#fff3ec', '#d8b0a5', '#9d233a', '#5d0c25', '#240511', '#c86a7a', '#2d1820'],
+        accents: ['#ffffff', '#f3bd91', '#170107']
+    },
+    graphite: {
+        label: 'GRAPHITE',
+        bg: '#080909',
+        paper: '#eeeeea',
+        colors: ['#eeeeea', '#c9cac5', '#8d9291', '#50585d', '#1b2024', '#0a0b0c', '#d4d6de'],
+        accents: ['#ffffff', '#93a4b4', '#020303']
+    },
+    neonsea: {
+        label: 'NEONSEA',
+        bg: '#001015',
+        paper: '#efffff',
+        colors: ['#efffff', '#00fff0', '#00a3ff', '#0057ff', '#06245f', '#ff2ba6', '#07181f'],
+        accents: ['#ffffff', '#a8ff00', '#00121c']
+    }
+};
+
+const RANDOM_PALETTE_COUNT = 18;
+const RANDOM_HUES = [
+    265, 238, 295, 190, 164, 128, 48, 18, 345, 328, 210, 276,
+    155, 32, 4, 72, 224, 252, 306, 176, 92, 12, 338, 200
+];
+
+for (let i = 0; i < RANDOM_PALETTE_COUNT; i++) {
+    const h = RANDOM_HUES[i % RANDOM_HUES.length];
+    const mate = (h + 24 + (i % 5) * 18) % 360;
+    const dark = `hsl(${h}, ${34 + (i % 4) * 8}%, ${5 + (i % 3) * 2}%)`;
+    const pale = `hsl(${mate}, 86%, 94%)`;
+    PALETTES[`flux${i + 1}`] = {
+        label: `FLUX ${String(i + 1).padStart(2, '0')}`,
+        bg: dark,
+        paper: pale,
+        colors: [
+            pale,
+            `hsl(${h}, 82%, 76%)`,
+            `hsl(${mate}, 78%, 64%)`,
+            `hsl(${(h + 72) % 360}, 68%, 48%)`,
+            `hsl(${(h + 144) % 360}, 56%, 34%)`,
+            `hsl(${h}, 62%, 18%)`,
+            `hsl(${(mate + 180) % 360}, 72%, 82%)`
+        ],
+        accents: [
+            '#ffffff',
+            `hsl(${(h + 42) % 360}, 100%, 72%)`,
+            `hsl(${h}, 56%, 10%)`
+        ]
     }
 };
 
@@ -106,6 +289,30 @@ function pick(list) {
 }
 
 function hexToRgb(hex) {
+    if (hex.startsWith('hsl')) {
+        const nums = hex.match(/[\d.]+/g)?.map(Number) || [0, 0, 0];
+        const h = ((nums[0] % 360) + 360) % 360;
+        const s = clamp(nums[1] / 100, 0, 1);
+        const l = clamp(nums[2] / 100, 0, 1);
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        const m = l - c / 2;
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        if (h < 60) [r, g, b] = [c, x, 0];
+        else if (h < 120) [r, g, b] = [x, c, 0];
+        else if (h < 180) [r, g, b] = [0, c, x];
+        else if (h < 240) [r, g, b] = [0, x, c];
+        else if (h < 300) [r, g, b] = [x, 0, c];
+        else [r, g, b] = [c, 0, x];
+        return {
+            r: Math.round((r + m) * 255),
+            g: Math.round((g + m) * 255),
+            b: Math.round((b + m) * 255)
+        };
+    }
+
     const h = hex.replace('#', '');
     return {
         r: parseInt(h.slice(0, 2), 16),
@@ -590,16 +797,29 @@ function renderLoop() {
     compositeToScreen(W, H);
 }
 
-document.querySelectorAll('.preset-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-        currentPaletteKey = e.currentTarget.dataset.preset;
-        pal = PALETTES[currentPaletteKey];
-        resetSurface(true);
-        initWorld();
+function renderPaletteButtons() {
+    const grid = document.getElementById('presetGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    Object.entries(PALETTES).forEach(([key, palette]) => {
+        const btn = document.createElement('button');
+        btn.className = `preset-btn${key === currentPaletteKey ? ' active' : ''}`;
+        btn.dataset.preset = key;
+        btn.textContent = palette.label || key.toUpperCase();
+        btn.style.setProperty('--swatch-a', palette.colors[1] || palette.paper);
+        btn.style.setProperty('--swatch-b', palette.colors[3] || palette.bg);
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPaletteKey = key;
+            pal = PALETTES[currentPaletteKey];
+            resetSurface(true);
+            initWorld();
+        });
+        grid.appendChild(btn);
     });
-});
+}
 
 startBtn.addEventListener('click', async () => {
     overlay.style.display = 'none';
@@ -654,4 +874,5 @@ toggleUIBtn.addEventListener('click', () => {
 });
 
 window.addEventListener('resize', resizeCanvas);
+renderPaletteButtons();
 resizeCanvas();
