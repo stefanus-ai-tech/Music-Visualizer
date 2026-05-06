@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABSTRACT FLUID — AUDIOVISUAL ORGANISM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="scanlines"></div>
+    <div id="overlay">
+        <div class="overlay-inner">
+            <div class="glitch-wrap">
+                <div class="title-block">
+                    <span class="title-main">FLUID</span>
+                    <span class="title-sub">// ABSTRACT PAINT ORGANISM · AUDIOVISUAL //</span>
+                </div>
+            </div>
+            <div class="sys-info">
+                <span class="sys-line">[SYS] PAINT ENGINE v4.0 ONLINE</span>
+                <span class="sys-line">[SYS] AWAITING AUDIO STREAM...</span>
+            </div>
+            <button id="startBtn">[ AWAKEN ]</button>
+            <p class="hint">► Select Tab or Screen → Enable "Share Audio"</p>
+        </div>
+    </div>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="controlsPanel" class="hidden">
+        <div class="panel-section">
+            <div class="panel-header">// WORLDS</div>
+            <div class="preset-grid">
+                <button class="preset-btn active" data-preset="blood">CRIMSON</button>
+                <button class="preset-btn" data-preset="asylum">NEON</button>
+                <button class="preset-btn" data-preset="rust">EMBER</button>
+                <button class="preset-btn" data-preset="ghost">ABYSS</button>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">// FLUID PHYSICS</div>
+            <label>Paint Intensity
+                <input type="range" id="ctrlIntensity" min="0" max="2" step="0.1" value="1.8">
+            </label>
+            <label>Ribbon Count
+                <input type="range" id="ctrlRings" min="20" max="100" step="1" value="45">
+            </label>
+            <label>Audio Reactivity
+                <input type="range" id="ctrlReact" min="0" max="2" step="0.05" value="1.2">
+            </label>
+            <label>Warp Amplitude
+                <input type="range" id="ctrlNoise" min="0" max="50" step="1" value="40">
+            </label>
+            <label>Drift Spin
+                <input type="range" id="ctrlSpin" min="-2" max="2" step="0.1" value="0.1">
+            </label>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">// ANATOMY</div>
+            <label>Blob Void
+                <input type="range" id="ctrlHole" min="0" max="0.5" step="0.01" value="0.15">
+            </label>
+            <label>Flow Thickness
+                <input type="range" id="ctrlThickness" min="0.5" max="3" step="0.1" value="0.8">
+            </label>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
