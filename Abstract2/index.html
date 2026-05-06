@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abstract Fluid - Audiovisual Marbling</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="scanlines"></div>
+    <div id="overlay">
+        <div class="overlay-inner">
+            <div class="glitch-wrap">
+                <div class="title-block">
+                    <span class="title-main">MARBLE</span>
+                    <span class="title-sub">// SPECTRAL PAINT ON WATER //</span>
+                </div>
+            </div>
+            <div class="sys-info">
+                <span class="sys-line">[SYS] LIQUID SPECTRUM ONLINE</span>
+                <span class="sys-line">[SYS] AWAITING VIDEO + AUDIO STREAM</span>
+            </div>
+            <button id="startBtn">[ AWAKEN ]</button>
+            <p class="hint">Select tab or screen, then enable Share Audio</p>
+        </div>
+    </div>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="controlsPanel" class="hidden">
+        <div class="panel-section">
+            <div class="panel-header">// WORLDS</div>
+            <div class="preset-grid">
+                <button class="preset-btn active" data-preset="blood">CRIMSON</button>
+                <button class="preset-btn" data-preset="asylum">PORCELAIN</button>
+                <button class="preset-btn" data-preset="rust">EMBER</button>
+                <button class="preset-btn" data-preset="ghost">ABYSS</button>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">// WATER PHYSICS</div>
+            <label>Paint Intensity
+                <input type="range" id="ctrlIntensity" min="0" max="2" step="0.1" value="1.35">
+            </label>
+            <label>Spectral Veins
+                <input type="range" id="ctrlRings" min="14" max="90" step="1" value="48">
+            </label>
+            <label>Audio Reactivity
+                <input type="range" id="ctrlReact" min="0" max="2" step="0.05" value="1.15">
+            </label>
+            <label>Warp Amplitude
+                <input type="range" id="ctrlNoise" min="0" max="50" step="1" value="26">
+            </label>
+            <label>Current Spin
+                <input type="range" id="ctrlSpin" min="-2" max="2" step="0.1" value="-0.2">
+            </label>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">// PAINT BODY</div>
+            <label>Bloom Void
+                <input type="range" id="ctrlHole" min="0" max="0.5" step="0.01" value="0.1">
+            </label>
+            <label>Marble Thickness
+                <input type="range" id="ctrlThickness" min="0.4" max="2.6" step="0.1" value="0.9">
+            </label>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
