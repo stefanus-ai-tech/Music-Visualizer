@@ -19,16 +19,16 @@ const ctrlBounce = document.getElementById('ctrlBounce');
 const ctrlExplosion = document.getElementById('ctrlExplosion');
 
 const PALETTES = {
-    cyberfluid: { label: 'CYBERFLUID', bg: '#020616', colors: ['#00f6ff', '#00ffb3', '#7d5cff', '#ff3df2', '#fcee09'], accents: ['#ffffff', '#7affff', '#ff7ae8'] },
-    plasma: { label: 'PLASMA', bg: '#08020f', colors: ['#ff6bd6', '#ff2bd6', '#7b2cff', '#00e5ff', '#fffb7d'], accents: ['#ffffff', '#ff6a00', '#9bf8ff'] },
-    abyss: { label: 'ABYSS', bg: '#020611', colors: ['#d5fbff', '#86e8ff', '#2192da', '#9e82e8', '#64fff1'], accents: ['#ffffff', '#8ec5ff', '#c29dff'] },
-    indigo: { label: 'INDIGO', bg: '#050619', colors: ['#c4ccff', '#82d8ff', '#7c8df6', '#3745bb', '#9d7cff'], accents: ['#ffffff', '#5669ff', '#b8e7ff'] },
-    lilac: { label: 'LILAC', bg: '#100818', colors: ['#e6d1ff', '#f0bce4', '#c49be8', '#c99aff', '#7de8ff'], accents: ['#ffffff', '#ffb3e8', '#b8f0ff'] },
-    crimson: { label: 'CRIMSON', bg: '#070408', colors: ['#f2e8d5', '#f0b982', '#ff2845', '#d10f2f', '#821020'], accents: ['#ffffff', '#ffd58f', '#ff7c9e'] },
-    opal: { label: 'OPAL', bg: '#061014', colors: ['#d8fff5', '#b7dcff', '#78d9ff', '#ffd4ef', '#fff0ad'], accents: ['#ffffff', '#b8ffd9', '#ffc6e5'] },
-    toxic: { label: 'TOXIC', bg: '#030a05', colors: ['#f4ff7d', '#c8ff35', '#0bff00', '#00ffaa', '#00a35a'], accents: ['#ffffff', '#eeff9f', '#7affc8'] },
-    ember: { label: 'EMBER', bg: '#090503', colors: ['#ffeac4', '#ffb13d', '#f56b21', '#ff2845', '#bd2a15'], accents: ['#ffffff', '#ffd98e', '#ff8c66'] },
-    mono: { label: 'MONO', bg: '#050607', colors: ['#ffffff', '#d8e3f0', '#9ea8b5', '#5d6a7d', '#303945'], accents: ['#ffffff', '#00f6ff', '#ff3df2'] }
+    cyberfluid: { label: 'CYBERFLUID', bg: '#020616', colors: ['#00f6ff', '#00ffb3', '#7d5cff', '#ff3df2', '#fcee09', '#ff7a00', '#7affff'], accents: ['#ffffff', '#7affff', '#ff7ae8'] },
+    plasma: { label: 'PLASMA', bg: '#08020f', colors: ['#ff6bd6', '#ff2bd6', '#7b2cff', '#00e5ff', '#fffb7d', '#ff6a00', '#66ffd9'], accents: ['#ffffff', '#ff6a00', '#9bf8ff'] },
+    abyss: { label: 'ABYSS', bg: '#020611', colors: ['#d5fbff', '#86e8ff', '#2192da', '#9e82e8', '#64fff1', '#4ea6ff', '#d1a1ff'], accents: ['#ffffff', '#8ec5ff', '#c29dff'] },
+    indigo: { label: 'INDIGO', bg: '#050619', colors: ['#c4ccff', '#82d8ff', '#7c8df6', '#3745bb', '#9d7cff', '#50b8ff', '#ff88ef'], accents: ['#ffffff', '#5669ff', '#b8e7ff'] },
+    lilac: { label: 'LILAC', bg: '#100818', colors: ['#e6d1ff', '#f0bce4', '#c49be8', '#c99aff', '#7de8ff', '#ff9fd7', '#b1f8ff'], accents: ['#ffffff', '#ffb3e8', '#b8f0ff'] },
+    crimson: { label: 'CRIMSON', bg: '#070408', colors: ['#f2e8d5', '#f0b982', '#ff2845', '#d10f2f', '#821020', '#ff7c9e', '#ffd58f'], accents: ['#ffffff', '#ffd58f', '#ff7c9e'] },
+    opal: { label: 'OPAL', bg: '#061014', colors: ['#d8fff5', '#b7dcff', '#78d9ff', '#ffd4ef', '#fff0ad', '#b8ffd9', '#ffc6e5'], accents: ['#ffffff', '#b8ffd9', '#ffc6e5'] },
+    toxic: { label: 'TOXIC', bg: '#030a05', colors: ['#f4ff7d', '#c8ff35', '#0bff00', '#00ffaa', '#00a35a', '#85ff7a', '#f7ffb2'], accents: ['#ffffff', '#eeff9f', '#7affc8'] },
+    ember: { label: 'EMBER', bg: '#090503', colors: ['#ffeac4', '#ffb13d', '#f56b21', '#ff2845', '#bd2a15', '#ff8c66', '#ffd98e'], accents: ['#ffffff', '#ffd98e', '#ff8c66'] },
+    mono: { label: 'MONO', bg: '#050607', colors: ['#ffffff', '#d8e3f0', '#9ea8b5', '#5d6a7d', '#303945', '#00f6ff', '#ff3df2'], accents: ['#ffffff', '#00f6ff', '#ff3df2'] }
 };
 
 let currentPaletteKey = 'cyberfluid';
@@ -254,6 +254,8 @@ uniform vec3 uColorB;
 uniform vec3 uColorC;
 uniform vec3 uColorD;
 uniform vec3 uColorE;
+uniform vec3 uColorF;
+uniform vec3 uColorG;
 uniform vec3 uAccentA;
 uniform vec3 uAccentB;
 uniform vec3 uBg;
@@ -287,9 +289,12 @@ void main() {
     color = mix(color, uColorC, tertiary * 0.52);
     color = mix(color, uColorD, mixMag * 0.44);
     color = mix(color, uColorE, smoothstep(0.18, 0.72, mag + speed * 0.35) * 0.36);
-    color += mix(uAccentA, uAccentB, clamp(speed * 1.8 + uBass * 0.8, 0.0, 1.0)) * tip * 0.42;
+    color = mix(color, uColorF, smoothstep(0.08, 0.55, speed + d.g * 0.8) * 0.28);
+    color = mix(color, uColorG, smoothstep(0.1, 0.42, d.b + speed * 0.7) * 0.22);
+    color += mix(uAccentA, uAccentB, clamp(speed * 1.8 + uBass * 0.8, 0.0, 1.0)) * tip * 0.54;
+    color += mix(uColorF, uColorG, clamp(uTreble + speed, 0.0, 1.0)) * rim * 0.26;
     color += uAccentB * rim * 0.22;
-    color += normalize(uColorA + uColorB + uColorC + uColorD + uColorE + 0.001) * speed * 0.14;
+    color += normalize(uColorA + uColorB + uColorC + uColorD + uColorE + uColorF + uColorG + 0.001) * speed * 0.14;
     color += min(texture(uBloom, uv).rgb, vec3(1.0)) * uBloomStrength * 0.2;
     color *= 0.52 + uIntensity * 0.34;
     color += vec3(hash(uv * uResolution + uTime) - 0.5) * 0.025;
@@ -515,7 +520,8 @@ function injectAudioForces() {
     const centerPush = (0.8 + bass * 5.2) * bassForce * react;
     const angle = time * 0.9 + spin * 1.7;
     splat(velocity, 0.5, 0.5, Math.cos(angle) * centerPush, Math.sin(angle) * centerPush, 0, 0.006 + bass * 0.018 + beatKick * 0.018);
-    splat(density, 0.5, 0.5, colors[0][0] * densityGain * (0.26 + beatKick * 0.9), colors[0][1] * densityGain * (0.26 + beatKick * 0.9), colors[0][2] * densityGain * (0.26 + beatKick * 0.9), 0.01 + beatKick * 0.02);
+    const coreA = colors[Math.floor((time * 3.0) % colors.length)];
+    splat(density, 0.5, 0.5, coreA[0] * densityGain * (0.26 + beatKick * 0.9), coreA[1] * densityGain * (0.26 + beatKick * 0.9), coreA[2] * densityGain * (0.26 + beatKick * 0.9), 0.01 + beatKick * 0.02);
 
     const emitters = 5;
     for (let i = 0; i < emitters; i++) {
@@ -526,7 +532,7 @@ function injectAudioForces() {
         const force = (0.18 + band * 2.7 + mid * 1.6) * react;
         const tangent = a + Math.PI * 0.5 + spin * 0.25;
         splat(velocity, x, y, Math.cos(tangent) * force, Math.sin(tangent) * force, 0, 0.0035 + band * 0.012);
-        const c = colors[(i * 2) % colors.length];
+        const c = colors[(i * 3 + Math.floor(time * 8)) % colors.length];
         splat(density, x, y, c[0] * densityGain * (0.12 + band * 0.48), c[1] * densityGain * (0.12 + band * 0.48), c[2] * densityGain * (0.12 + band * 0.48), 0.004 + treble * 0.008);
     }
 
@@ -541,17 +547,17 @@ function fluidExplosion(strength = 1) {
     const explosionGain = Number(ctrlExplosion?.value || 1);
     const densityGain = Number(ctrlIntensity.value);
     const colors = [...pal.colors.map(rgb), ...pal.accents.slice(0, 2).map(rgb)];
-    const cx = 0.5 + (Math.random() - 0.5) * 0.06;
-    const cy = 0.5 + (Math.random() - 0.5) * 0.06;
+    const cx = 0.14 + Math.random() * 0.72;
+    const cy = 0.16 + Math.random() * 0.68;
     const blast = Math.max(0.55, strength) * (1 + beat * 0.35);
     const power = (7.5 + bass * 18.0 + blast * 7.0) * Math.max(0.25, bassForce) * react * explosionGain;
     const densityPower = densityGain * (0.16 + bass * 0.28 + blast * 0.05) * (0.78 + explosionGain * 0.24);
 
-    splat(velocity, cx, cy, (Math.random() - 0.5) * power * 0.35, (Math.random() - 0.5) * power * 0.35, 0, 0.065 + bass * 0.055 + blast * 0.02);
+    splat(velocity, cx, cy, (Math.random() - 0.5) * power * 0.4, (Math.random() - 0.5) * power * 0.4, 0, 0.03 + bass * 0.018 + blast * 0.008);
     for (let i = 0; i < 28; i++) {
         const t = i / 28;
         const a = t * Math.PI * 2 + time * 0.7 + Math.sin(i * 17.13) * 0.28;
-        const ring = 0.018 + (i % 4) * 0.018 + Math.random() * 0.035;
+        const ring = 0.01 + (i % 4) * 0.01 + Math.random() * 0.012;
         const x = cx + Math.cos(a) * ring;
         const y = cy + Math.sin(a) * ring;
         const radial = power * (1.05 + Math.random() * 1.45);
@@ -560,20 +566,20 @@ function fluidExplosion(strength = 1) {
         const vy = Math.sin(a) * radial + Math.sin(a + Math.PI * 0.5) * swirl;
         const c = colors[(i * 3) % colors.length];
 
-        splat(velocity, x, y, vx, vy, 0, 0.012 + Math.random() * 0.026 + bass * 0.018);
-        splat(density, x, y, c[0] * densityPower * 0.28, c[1] * densityPower * 0.28, c[2] * densityPower * 0.28, 0.006 + Math.random() * 0.01);
+        splat(velocity, x, y, vx, vy, 0, 0.007 + Math.random() * 0.012 + bass * 0.008);
+        splat(density, x, y, c[0] * densityPower * 0.34, c[1] * densityPower * 0.34, c[2] * densityPower * 0.34, 0.004 + Math.random() * 0.006);
     }
 
     for (let i = 0; i < 8; i++) {
         const a = Math.random() * Math.PI * 2;
-        const x = 0.5 + Math.cos(a) * (0.16 + Math.random() * 0.26);
-        const y = 0.5 + Math.sin(a) * (0.12 + Math.random() * 0.22);
+        const x = cx + Math.cos(a) * (0.08 + Math.random() * 0.12);
+        const y = cy + Math.sin(a) * (0.08 + Math.random() * 0.12);
         const recoil = power * (0.55 + Math.random() * 0.75);
-        splat(velocity, x, y, Math.cos(a) * recoil, Math.sin(a) * recoil, 0, 0.018 + blast * 0.012);
+        splat(velocity, x, y, Math.cos(a) * recoil, Math.sin(a) * recoil, 0, 0.008 + blast * 0.006);
     }
 
-    const core = colors[Math.floor((time * 10) % colors.length)];
-    splat(density, cx, cy, core[0] * densityPower * 0.42, core[1] * densityPower * 0.42, core[2] * densityPower * 0.42, 0.018 + bass * 0.014 + blast * 0.006);
+    const core = colors[Math.floor((time * 10 + Math.random() * colors.length) % colors.length)];
+    splat(density, cx, cy, core[0] * densityPower * 0.5, core[1] * densityPower * 0.5, core[2] * densityPower * 0.5, 0.01 + bass * 0.008 + blast * 0.004);
 }
 
 function bloomPass() {
@@ -602,6 +608,8 @@ function render() {
     const c = rgb(pal.colors[2]);
     const d = rgb(pal.colors[3] || pal.colors[0]);
     const e = rgb(pal.colors[4] || pal.colors[1]);
+    const f = rgb(pal.colors[5] || pal.colors[2]);
+    const g = rgb(pal.colors[6] || pal.colors[3] || pal.colors[0]);
     const accentA = rgb(pal.accents[0] || pal.colors[0]);
     const accentB = rgb(pal.accents[1] || pal.colors[2]);
     const bg = rgb(pal.bg);
@@ -610,6 +618,8 @@ function render() {
     gl.uniform3f(prg.uniforms.uColorC, c[0], c[1], c[2]);
     gl.uniform3f(prg.uniforms.uColorD, d[0], d[1], d[2]);
     gl.uniform3f(prg.uniforms.uColorE, e[0], e[1], e[2]);
+    gl.uniform3f(prg.uniforms.uColorF, f[0], f[1], f[2]);
+    gl.uniform3f(prg.uniforms.uColorG, g[0], g[1], g[2]);
     gl.uniform3f(prg.uniforms.uAccentA, accentA[0], accentA[1], accentA[2]);
     gl.uniform3f(prg.uniforms.uAccentB, accentB[0], accentB[1], accentB[2]);
     gl.uniform3f(prg.uniforms.uBg, bg[0], bg[1], bg[2]);
