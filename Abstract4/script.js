@@ -16,6 +16,7 @@ const ctrlSpin = document.getElementById('ctrlSpin');
 const ctrlHole = document.getElementById('ctrlHole');
 const ctrlThickness = document.getElementById('ctrlThickness');
 const ctrlIntensity = document.getElementById('ctrlIntensity');
+const ctrlBounce = document.getElementById('ctrlBounce');
 
 const PALETTES = {
     cyberpunk: { label: 'CYBER', bg: '#020616', paper: '#dffbff', colors: ['#dffbff', '#00f6ff', '#14b8ff', '#8b5cff', '#ff3df2', '#061a3d', '#04101e'], accents: ['#ffffff', '#f7ff4a', '#ff2bd6'] },
@@ -168,6 +169,33 @@ function smoothNoise(x, y) {
     const u = xf * xf * (3 - 2 * xf);
     const v = yf * yf * (3 - 2 * yf);
     return lerp(lerp(noise(xi, yi), noise(xi + 1, yi), u), lerp(noise(xi, yi + 1), noise(xi + 1, yi + 1), u), v);
+}
+
+function beatWarpPoint(px, py, phase = 0, strength = 1) {
+    const bounce = Number(ctrlBounce?.value || 1);
+    const cx = W * 0.5;
+    const cy = H * 0.52;
+    const dx = px - cx;
+    const dy = py - cy;
+    const dist = Math.hypot(dx, dy);
+    const maxDist = Math.max(W, H) * 0.58;
+    const r = dist / Math.max(1, maxDist);
+    const nx = dx / Math.max(1, dist);
+    const ny = dy / Math.max(1, dist);
+    const pulse = Math.pow(beatPulse, 0.5) * (0.85 + bassEnergy * 4.2) * bounce * strength;
+    const hill = Math.exp(-r * r * 5.8);
+    const ring = Math.max(0, Math.sin(r * 18.5 - time * 13.5 + phase)) * Math.exp(-r * 1.35);
+    const push = pulse * (hill * 70 + ring * 46) * dpr;
+    const lift = pulse * (hill * 145 + ring * 42) * dpr;
+
+    return {
+        x: px + nx * push,
+        y: py + ny * push - lift * 0.34,
+        lift,
+        scale: 1 + pulse * (hill * 1.75 + ring * 0.62),
+        twist: pulse * (hill * 0.5 + ring * 0.24),
+        hill
+    };
 }
 
 function setupLogBins(isSimulated = false) {
@@ -377,16 +405,18 @@ function stepLattice() {
 
 function addAudioImpulses(isBeat) {
     const react = Number(ctrlReact.value);
-    const amount = 0.5 + bassEnergy * 3.5 + videoMotion * 4;
+    const bounce = Number(ctrlBounce?.value || 1);
+    const amount = 0.5 + bassEnergy * (3.5 + bounce * 3.8) + videoMotion * 4;
     injectForce(cols * 0.5, rows * 0.52, 6 + bassEnergy * 18, 0.25 + Number(ctrlSpin.value) * 0.18, -0.08, amount * react);
 
     if (isBeat) {
-        beatPulse = 1;
-        for (let i = 0; i < 7; i++) {
+        beatPulse = clamp(1.05 + bounce * 0.18, 1, 1.65);
+        injectForce(cols * 0.5, rows * 0.52, 8 + bassEnergy * 24, 0, -1.2 * bounce, (2.2 + bassEnergy * 3.5) * react * bounce);
+        for (let i = 0; i < 7 + Math.floor(bounce * 2); i++) {
             const a = (i / 7) * Math.PI * 2 + time;
             const cx = cols * (0.5 + Math.cos(a) * rand(0.05, 0.34));
             const cy = rows * (0.5 + Math.sin(a) * rand(0.05, 0.34));
-            injectForce(cx, cy, rand(4, 12), Math.cos(a + Math.PI * 0.5) * rand(0.9, 2.4), Math.sin(a + Math.PI * 0.5) * rand(0.9, 2.4), rand(0.8, 1.8) * react);
+            injectForce(cx, cy, rand(4, 12 + bounce * 4), Math.cos(a + Math.PI * 0.5) * rand(0.9, 2.4 + bounce), Math.sin(a + Math.PI * 0.5) * rand(0.9, 2.4 + bounce), rand(0.8, 1.8 + bounce) * react);
         }
     }
 }
@@ -423,19 +453,25 @@ function drawField() {
             const i = index(x, y);
             const px = (x + 0.5) * (W / cols);
             const py = (y + 0.5) * (H / rows);
+            const warped = beatWarpPoint(px, py, (x + y) * 0.07, 1);
+            const bx = warped.x;
+            const by = warped.y;
+            const localHexR = hexR * (1 + warped.lift / Math.max(W, H) * 2.4) * (0.92 + warped.scale * 0.08);
+            const localHexH = hexH * (1 + warped.lift / Math.max(W, H) * 1.7);
             const speed = Math.hypot(ux[i], uy[i]);
             const d = clamp(dye[i], 0, 1.8);
             const c = pal.colors[Math.floor(Math.abs(curl[i] * 3 + pressure[i] * 2.1)) % pal.colors.length];
-            const alpha = clamp(0.035 + d * 0.22 + speed * 0.22 + beatPulse * 0.08, 0.02, 0.7) * intensity;
+            const alpha = clamp(0.035 + d * 0.22 + speed * 0.22 + beatPulse * 0.08 + warped.hill * beatPulse * 0.18, 0.02, 0.82) * intensity;
 
             if (d < voidThreshold && speed < 0.04) continue;
             ctx.strokeStyle = rgba(c, alpha);
-            ctx.lineWidth = Math.max(0.45, dpr * thickness * (0.45 + d * 0.7));
+            ctx.lineWidth = Math.max(0.45, dpr * thickness * (0.45 + d * 0.7 + warped.hill * beatPulse * 1.1));
             ctx.beginPath();
             for (let k = 0; k < 6; k++) {
-                const a = Math.PI / 6 + k * Math.PI / 3;
-                const hx = px + Math.cos(a) * hexR;
-                const hy = py + Math.sin(a) * hexH;
+                const a = Math.PI / 6 + k * Math.PI / 3 + warped.twist;
+                const cornerPulse = 1 + Math.sin(k * 1.7 + time * 6 + x * 0.09) * beatPulse * warped.hill * 0.16;
+                const hx = bx + Math.cos(a) * localHexR * cornerPulse;
+                const hy = by + Math.sin(a) * localHexH * (2 - cornerPulse);
                 k === 0 ? ctx.moveTo(hx, hy) : ctx.lineTo(hx, hy);
             }
             ctx.closePath();
@@ -446,9 +482,10 @@ function drawField() {
                 glowCtx.lineWidth = ctx.lineWidth * 1.8;
                 glowCtx.beginPath();
                 for (let k = 0; k < 6; k++) {
-                    const a = Math.PI / 6 + k * Math.PI / 3;
-                    const hx = px + Math.cos(a) * hexR;
-                    const hy = py + Math.sin(a) * hexH;
+                    const a = Math.PI / 6 + k * Math.PI / 3 + warped.twist;
+                    const cornerPulse = 1 + Math.sin(k * 1.7 + time * 6 + x * 0.09) * beatPulse * warped.hill * 0.16;
+                    const hx = bx + Math.cos(a) * localHexR * cornerPulse;
+                    const hy = by + Math.sin(a) * localHexH * (2 - cornerPulse);
                     k === 0 ? glowCtx.moveTo(hx, hy) : glowCtx.lineTo(hx, hy);
                 }
                 glowCtx.closePath();
@@ -460,22 +497,47 @@ function drawField() {
                 ctx.strokeStyle = rgba(c, alpha * 1.25);
                 ctx.lineWidth = Math.max(0.7, dpr * thickness);
                 ctx.beginPath();
-                ctx.moveTo(px, py);
-                ctx.lineTo(px + ux[i] * len, py + uy[i] * len);
+                ctx.moveTo(bx, by);
+                ctx.lineTo(bx + ux[i] * len * warped.scale, by + uy[i] * len * warped.scale);
                 ctx.stroke();
                 ctx.fillStyle = rgba(pal.accents[(x + y) % pal.accents.length], alpha * 0.7);
                 ctx.beginPath();
-                ctx.arc(px, py, Math.max(1.2 * dpr, cell * 0.06 + d * cell * 0.12), 0, Math.PI * 2);
+                ctx.arc(bx, by, Math.max(1.2 * dpr, cell * 0.06 + d * cell * 0.12) * warped.scale, 0, Math.PI * 2);
                 ctx.fill();
 
                 glowCtx.strokeStyle = rgba(c, alpha * 0.9);
                 glowCtx.lineWidth = ctx.lineWidth * 2.4;
                 glowCtx.beginPath();
-                glowCtx.moveTo(px, py);
-                glowCtx.lineTo(px + ux[i] * len, py + uy[i] * len);
+                glowCtx.moveTo(bx, by);
+                glowCtx.lineTo(bx + ux[i] * len * warped.scale, by + uy[i] * len * warped.scale);
                 glowCtx.stroke();
             }
         }
+    }
+
+    if (beatPulse > 0.02) {
+        const bounce = Number(ctrlBounce?.value || 1);
+        const cx = W * 0.5;
+        const cy = H * 0.52 - Math.pow(beatPulse, 0.58) * 52 * dpr * bounce;
+        const pulse = Math.pow(beatPulse, 0.68);
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        for (let i = 0; i < 4; i++) {
+            const r = (0.08 + i * 0.095 + (1 - pulse) * 0.12 * bounce) * Math.min(W, H);
+            const color = i % 2 === 0 ? pal.colors[1] : pal.accents[1];
+            ctx.strokeStyle = rgba(color, (0.23 - i * 0.038) * pulse * Math.min(1.5, bounce));
+            ctx.lineWidth = Math.max(1, dpr * (1.5 + i * 0.9) * Math.min(1.7, bounce));
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, r * (1.35 + pulse * 0.32), r * (0.5 + pulse * 0.22), 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            glowCtx.strokeStyle = rgba(color, (0.28 - i * 0.045) * pulse * Math.min(1.45, bounce));
+            glowCtx.lineWidth = ctx.lineWidth * 4;
+            glowCtx.beginPath();
+            glowCtx.ellipse(cx, cy, r * (1.35 + pulse * 0.32), r * (0.5 + pulse * 0.22), 0, 0, Math.PI * 2);
+            glowCtx.stroke();
+        }
+        ctx.restore();
     }
 
     if (glow > 0.05) {
@@ -623,8 +685,9 @@ function renderLoop() {
     bassEnergy = bassEnergy * 0.86 + eB * 0.14;
     midEnergy = midEnergy * 0.86 + eM * 0.14;
     highEnergy = highEnergy * 0.86 + eH * 0.14;
-    beatPulse = Math.max(0, beatPulse - 0.035);
-    const isBeat = eB - lastBass > 0.028 && eB > 0.075;
+    const bounce = Number(ctrlBounce?.value || 1);
+    beatPulse = Math.max(0, beatPulse - (0.028 / Math.max(0.75, bounce)));
+    const isBeat = eB - lastBass > 0.018 && eB > 0.055;
     lastBass = eB;
 
     updateVideoField();
