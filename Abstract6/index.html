@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abstract 6 - Volumetric Gas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="overlay">
+        <div class="overlay-inner">
+            <h1 class="title">NEBULA</h1>
+            <p class="subtitle">Volumetric Gas & Light Scattering</p>
+            <button id="startBtn">IGNITE STREAM</button>
+            <p class="hint">Select a tab/screen with Share Audio enabled</p>
+        </div>
+    </div>
+
+    <canvas id="visualizer"></canvas>
+
+    <div id="controlsPanel" class="hidden">
+        <div class="panel-section">
+            <div class="panel-header">GAS DYNAMICS</div>
+            <label>Turbulence
+                <input type="range" id="ctrlNoise" min="0" max="60" step="1" value="45">
+            </label>
+            <label>Dissipation
+                <input type="range" id="ctrlHole" min="0.95" max="0.9999" step="0.0001" value="0.998">
+            </label>
+            <label>Vorticity Confinement
+                <input type="range" id="ctrlVorticity" min="0" max="50" step="1" value="12">
+            </label>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">VOLUMETRIC LIGHT</div>
+            <label>Ray Density
+                <input type="range" id="ctrlRayDensity" min="0.1" max="1.0" step="0.05" value="0.8">
+            </label>
+            <label>Ray Decay
+                <input type="range" id="ctrlRayDecay" min="0.85" max="0.99" step="0.01" value="0.95">
+            </label>
+            <label>Light Exposure
+                <input type="range" id="ctrlExposure" min="0" max="1" step="0.05" value="0.45">
+            </label>
+            <label>Core Brightness
+                <input type="range" id="ctrlCore" min="0" max="2" step="0.1" value="1.2">
+            </label>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">AUDIO RESPONSE</div>
+            <label>Reactivity
+                <input type="range" id="ctrlReact" min="0" max="3" step="0.1" value="1.8">
+            </label>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-header">COLOR ATMOSPHERE</div>
+            <div class="preset-grid" id="presetGrid"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
