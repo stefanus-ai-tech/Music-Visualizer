@@ -17,6 +17,7 @@ const ctrlRayDensity = document.getElementById('ctrlRayDensity');
 const ctrlRayDecay = document.getElementById('ctrlRayDecay');
 const ctrlExposure = document.getElementById('ctrlExposure');
 const ctrlCore = document.getElementById('ctrlCore');
+const ctrlBomb = document.getElementById('ctrlBomb');
 
 // Each palette now defines 3 distinct layer colors + a core light color
 const PALETTES = {
@@ -56,6 +57,7 @@ let logIndices = [];
 let useRealAudio = false;
 let bass = 0, mid = 0, treble = 0;
 let beat = 0;
+let bombTriggered = false;
 
 // ==================== SHADERS ====================
 
@@ -155,6 +157,9 @@ void main() {
     vec2 force = 0.5 * vec2(T - B, L - R);
     force /= length(force) + 0.0001;
     force *= uCurlForce * C;
+    // Clamp force so vorticity adds detail swirls but never builds into a gale
+    float fLen = length(force);
+    if (fLen > 3.0) force *= 3.0 / fLen;
     vec2 vel = texture(uVelocity, vUv).xy + force * uDt;
     fragColor = vec4(vel, 0.0, 1.0);
 }`;
@@ -202,6 +207,8 @@ uniform vec3 uColor1;
 uniform vec3 uColor2;
 uniform vec3 uCoreColor;
 uniform float uBass;
+uniform float uMid;
+uniform float uTreble;
 uniform float uCoreBrightness;
 uniform float uTime;
 in vec2 vUv;
@@ -216,34 +223,43 @@ float noise(vec2 p) {
 }
 
 void main() {
-    // Sample each independent layer (stored in .r channel)
     float d0 = texture(uLayer0, vUv).r;
     float d1 = texture(uLayer1, vUv).r;
     float d2 = texture(uLayer2, vUv).r;
 
-    // Smooth gas density mapping per layer
-    float g0 = smoothstep(0.0, 0.6, d0);
-    float g1 = smoothstep(0.0, 0.6, d1);
-    float g2 = smoothstep(0.0, 0.6, d2);
+    // Audio-reactive density mapping
+    float energy = 0.6 + uBass * 0.8 + uMid * 0.5 + uTreble * 0.3;
+    float g0 = smoothstep(0.0, 0.5, d0 * energy);
+    float g1 = smoothstep(0.0, 0.5, d1 * energy);
+    float g2 = smoothstep(0.0, 0.5, d2 * energy);
 
-    // Each layer contributes its own pure color — no cross-contamination
-    vec3 color = vec3(0.0);
-    color += uColor0 * g0;
-    color += uColor1 * g1;
-    color += uColor2 * g2;
+    // "Oil and water" blending: colors do not mix! The strongest density dominates the pixel color.
+    // Raising weights to a high power sharply separates the colors while keeping edges anti-aliased.
+    float maxG = max(max(g0, g1), g2);
+    float p = 6.0;
+    float w0 = pow(g0, p);
+    float w1 = pow(g1, p);
+    float w2 = pow(g2, p);
+    float sumW = w0 + w1 + w2 + 0.00001;
 
-    // Subtle noise texture on the gas
+    vec3 gasColor = (uColor0 * w0 + uColor1 * w1 + uColor2 * w2) / sumW;
+    vec3 color = gasColor * maxG;
+
+    // Noise texture
     float n = noise(vUv * 12.0 + uTime * 0.3);
     color *= (0.85 + 0.15 * n);
 
-    // Central light core
+    // Central light core — pulses hard with bass
     float dist = distance(vUv, vec2(0.5));
-    float core = exp(-dist * 18.0) * uCoreBrightness * (1.0 + uBass * 2.5);
+    float core = exp(-dist * 16.0) * uCoreBrightness * (1.0 + uBass * 4.0);
 
-    // Gas occludes the core — thicker gas = less core shine-through
-    float totalDensity = d0 + d1 + d2;
-    float occlusion = 1.0 / (1.0 + totalDensity * 4.0);
+    // Gas occludes core based on max density
+    float occlusion = 1.0 / (1.0 + maxG * 4.0);
     color += uCoreColor * core * occlusion;
+
+    // Hot inner glow on gas near the core — reactive to bass
+    float innerGlow = exp(-dist * 6.0) * uBass * 1.5;
+    color += gasColor * innerGlow * maxG;
 
     fragColor = vec4(color, 1.0);
 }`;
@@ -390,6 +406,30 @@ function rgb(hex) {
     return [parseInt(h.slice(0,2),16)/255, parseInt(h.slice(2,4),16)/255, parseInt(h.slice(4,6),16)/255];
 }
 
+function shiftHue(color, shift) {
+    let r = color[0], g = color[1], b = color[2];
+    let max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h = 0, s = (max === 0 ? 0 : d / max), v = max;
+    if (max !== min) {
+        if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h /= 6;
+    }
+    h = (h + shift) % 1.0;
+    let i = Math.floor(h * 6), f = h * 6 - i;
+    let p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+    }
+    return [r, g, b];
+}
+
 // ==================== SIMULATION ====================
 
 function resize() {
@@ -501,42 +541,58 @@ function injectAudioForces() {
     const noiseAmt = Number(ctrlNoise.value) * 0.01;
     const layers = [layer0, layer1, layer2];
 
-    const push = (0.03 + bass * 0.2) * react;
+    // Velocity push stays gentle — only density scales hard
+    const push = (0.03 + bass * 0.15) * react;
 
     // Each layer has its own emitter zone at 120° apart
     for (let L = 0; L < 3; L++) {
         const baseAngle = L * Math.PI * 2 / 3;
         const orbit = time * 0.12 + baseAngle;
 
-        // 2 emitters per layer, slightly offset
+        // 2 emitters per layer
         for (let e = 0; e < 2; e++) {
             const a = orbit + e * 0.6;
             const bandIdx = Math.floor(((L * 2 + e) / 6) * (BINS - 1));
             const band = smoothedBins[bandIdx] || 0;
 
-            const r = 0.14 + mid * 0.08 + e * 0.06;
+            const r = 0.12 + mid * 0.1 + e * 0.04;
             const x = 0.5 + Math.cos(a) * r;
             const y = 0.5 + Math.sin(a) * r;
 
-            // Tangent swirl + mild outward push
+            // Tangent swirl — velocity stays gentle
             const tangent = a + Math.PI * 0.5 + (Math.random() - 0.5) * noiseAmt;
-            const fMag = push * (0.15 + band * 0.8);
-            const vx = Math.cos(tangent) * fMag + Math.cos(a) * fMag * 0.1;
-            const vy = Math.sin(tangent) * fMag + Math.sin(a) * fMag * 0.1;
+            const fMag = push * (0.12 + band * 0.5);
+            const vx = Math.cos(tangent) * fMag + Math.cos(a) * fMag * 0.08;
+            const vy = Math.sin(tangent) * fMag + Math.sin(a) * fMag * 0.08;
+            splat(velocity, x, y, vx, vy, 0, 0.006 + band * 0.008);
 
-            // Velocity is shared — all layers contribute to one flow field
-            splat(velocity, x, y, vx, vy, 0, 0.006 + band * 0.01);
-
-            // Density goes ONLY into this layer's own buffer (single-channel .r)
-            const dAmt = 0.12 + band * 0.35;
-            splat(layers[L], x, y, dAmt, 0, 0, 0.012 + treble * 0.006);
+            // DENSITY scales hard with audio
+            const dAmt = (0.15 + band * 1.2 + bass * 0.6) * react;
+            const dRadius = 0.01 + band * 0.015 + treble * 0.008;
+            splat(layers[L], x, y, dAmt, 0, 0, dRadius);
         }
     }
 
-    // Gentle central push on beats
-    if (beat > 0.5) {
-        const bPush = push * 1.0;
-        splat(velocity, 0.5, 0.5, (Math.random()-0.5)*bPush, (Math.random()-0.5)*bPush, 0, 0.03);
+    // Sniper Shot on beat (Shoots a high-speed bullet through the gas)
+    const bombStr = Number(ctrlBomb.value);
+    if (bombTriggered && bombStr > 0) {
+        bombTriggered = false; // Consume trigger
+        
+        // Random impact point
+        const bx = 0.2 + Math.random() * 0.6;
+        const by = 0.2 + Math.random() * 0.6;
+        
+        // Bullet characteristics: very small radius, extreme velocity
+        const bulletRadius = 0.005 * (0.8 + bombStr * 0.2);
+        const bulletForce = (80.0 + bass * 40.0) * bombStr;
+
+        // Random trajectory angle
+        const ang = Math.random() * Math.PI * 2;
+        
+        // Ditembak pake senapan (Sniper shot): 
+        // A single extreme directional force. This punches a hole at the impact point 
+        // and drags the gas into beautiful trailing vortices (fluid dynamics) along its path.
+        splat(velocity, bx, by, Math.cos(ang) * bulletForce, Math.sin(ang) * bulletForce, 0, bulletRadius);
     }
 }
 
@@ -550,9 +606,11 @@ function render() {
     bindTex(prg.uniforms.uLayer1, layer1.read.tex, 1);
     bindTex(prg.uniforms.uLayer2, layer2.read.tex, 2);
 
-    const c0 = rgb(pal.layers[0]);
-    const c1 = rgb(pal.layers[1]);
-    const c2 = rgb(pal.layers[2]);
+    // Continuously shift hues over time so colors are always new, but relative differences remain
+    const cycle = time * 0.08;
+    const c0 = shiftHue(rgb(pal.layers[0]), cycle);
+    const c1 = shiftHue(rgb(pal.layers[1]), cycle);
+    const c2 = shiftHue(rgb(pal.layers[2]), cycle);
     const cc = rgb(pal.core);
 
     gl.uniform3f(prg.uniforms.uColor0, c0[0], c0[1], c0[2]);
@@ -560,6 +618,8 @@ function render() {
     gl.uniform3f(prg.uniforms.uColor2, c2[0], c2[1], c2[2]);
     gl.uniform3f(prg.uniforms.uCoreColor, cc[0], cc[1], cc[2]);
     gl.uniform1f(prg.uniforms.uBass, bass);
+    gl.uniform1f(prg.uniforms.uMid, mid);
+    gl.uniform1f(prg.uniforms.uTreble, treble);
     gl.uniform1f(prg.uniforms.uCoreBrightness, Number(ctrlCore.value));
     gl.uniform1f(prg.uniforms.uTime, time);
     target(renderBuffer); draw();
@@ -571,7 +631,7 @@ function render() {
     gl.uniform1f(programs.godRays.uniforms.uDensity, Number(ctrlRayDensity.value));
     gl.uniform1f(programs.godRays.uniforms.uWeight, 0.05);
     gl.uniform1f(programs.godRays.uniforms.uDecay, Number(ctrlRayDecay.value));
-    gl.uniform1f(programs.godRays.uniforms.uExposure, Number(ctrlExposure.value) + bass * 0.12);
+    gl.uniform1f(programs.godRays.uniforms.uExposure, Number(ctrlExposure.value) + bass * 0.3 + mid * 0.1);
     target(raysBuffer); draw();
 
     // Pass 3 — Final composite to screen
@@ -617,18 +677,27 @@ function updateAudio() {
 
     for (let i = 0; i < BINS; i++) {
         const raw = Math.max(0, Math.min(1, (dataArray[logIndices[i] || 0] - MIN_DB) / (MAX_DB - MIN_DB)));
-        smoothedBins[i] = smoothedBins[i] * 0.82 + raw * 0.18;
+        // Snappy tracking — fast attack, moderate release
+        smoothedBins[i] = raw > smoothedBins[i]
+            ? smoothedBins[i] * 0.4 + raw * 0.6   // fast attack
+            : smoothedBins[i] * 0.85 + raw * 0.15; // smooth release
     }
     const b = getEnergy(dataArray, 1, Math.floor(BIN_COUNT * 0.05));
     const m = getEnergy(dataArray, Math.floor(BIN_COUNT * 0.05), Math.floor(BIN_COUNT * 0.3));
     const t = getEnergy(dataArray, Math.floor(BIN_COUNT * 0.3), Math.floor(BIN_COUNT * 0.8));
 
-    bass   = bass   * 0.82 + b * 0.18;
-    mid    = mid    * 0.86 + m * 0.14;
-    treble = treble * 0.86 + t * 0.14;
+    // Fast attack, smooth release for punchy feel
+    bass   = b > bass   ? bass   * 0.4 + b * 0.6 : bass   * 0.88 + b * 0.12;
+    mid    = m > mid    ? mid    * 0.5 + m * 0.5 : mid    * 0.88 + m * 0.12;
+    treble = t > treble ? treble * 0.5 + t * 0.5 : treble * 0.88 + t * 0.12;
 
-    if (b - bass > 0.12) beat = 1.0;
-    beat = Math.max(0, beat - 0.04);
+    // Lower beat threshold to catch more hits
+    const beatDelta = b - bass;
+    if (beatDelta > 0.06 && b > 0.03) {
+        beat = Math.min(1.5, 1.0 + beatDelta * 5.0);
+        bombTriggered = true;
+    }
+    beat = Math.max(0, beat - 0.05);
 }
 
 // ==================== MAIN LOOP ====================
