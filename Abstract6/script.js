@@ -58,6 +58,8 @@ let useRealAudio = false;
 let bass = 0, mid = 0, treble = 0;
 let beat = 0;
 let bombTriggered = false;
+let lastShotTime = -10;
+let activeShots = [];
 
 // ==================== SHADERS ====================
 
@@ -93,6 +95,34 @@ void main() {
     float splat = exp(-dot(p, p) / max(0.00001, uRadius));
     vec3 base = texture(uTarget, vUv).xyz;
     fragColor = vec4(base + uColor * splat, 1.0);
+}`;
+
+const carveFrag = `#version 300 es
+precision highp float;
+uniform sampler2D uTarget;
+uniform vec2 uPoint;
+uniform vec2 uDirection;
+uniform float uRadius;
+uniform float uLength;
+uniform float uStrength;
+uniform float uAspect;
+in vec2 vUv;
+out vec4 fragColor;
+void main() {
+    vec2 q = vUv - uPoint;
+    q.x *= uAspect;
+
+    vec2 d = normalize(vec2(uDirection.x * uAspect, uDirection.y));
+    float along = dot(q, d);
+    vec2 closest = q - d * clamp(along, -uLength * 0.5, uLength * 0.5);
+
+    float trailGate = 1.0 - smoothstep(uLength * 0.36, uLength * 0.5, abs(along));
+    float tunnel = exp(-dot(closest, closest) / max(0.000001, uRadius)) * trailGate;
+    float impact = exp(-dot(q, q) / max(0.000001, uRadius * 10.0));
+    float carve = clamp((tunnel * 1.25 + impact * 0.55) * uStrength, 0.0, 0.98);
+
+    vec3 base = max(texture(uTarget, vUv).xyz, vec3(0.0));
+    fragColor = vec4(base * (1.0 - carve), 1.0);
 }`;
 
 const advectionFrag = `#version 300 es
@@ -211,6 +241,12 @@ uniform float uMid;
 uniform float uTreble;
 uniform float uCoreBrightness;
 uniform float uTime;
+uniform float uAspect;
+uniform vec4 uShot0;
+uniform vec4 uShot1;
+uniform vec4 uShot2;
+uniform vec4 uShot3;
+uniform vec4 uShotPower;
 in vec2 vUv;
 out vec4 fragColor;
 
@@ -220,6 +256,30 @@ float noise(vec2 p) {
     vec2 u = f*f*(3.0-2.0*f);
     return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
                mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+
+void applyShot(vec4 shot, float power, inout float bore, inout float rim, inout float wave) {
+    if (shot.w < 0.0 || power <= 0.0) return;
+
+    float age = shot.w;
+    float fade = exp(-age * 1.55) * power;
+    vec2 dir = vec2(cos(shot.z), sin(shot.z));
+    vec2 q = vUv - shot.xy;
+    q.x *= uAspect;
+
+    vec2 d = normalize(vec2(dir.x * uAspect, dir.y));
+    float along = dot(q, d);
+    vec2 perp = q - d * along;
+    float dist = length(perp);
+    float trailGate = 1.0 - smoothstep(0.32, 0.54, abs(along));
+
+    float tunnel = trailGate * (1.0 - smoothstep(0.006, 0.032 + age * 0.010, dist)) * fade;
+    float hotEdge = trailGate * exp(-pow((dist - (0.034 + age * 0.010)) * 42.0, 2.0)) * fade;
+    float shock = exp(-pow((length(q) - (0.045 + age * 0.26)) * 30.0, 2.0)) * exp(-age * 1.1) * power;
+
+    bore = max(bore, tunnel);
+    rim = max(rim, hotEdge);
+    wave = max(wave, shock);
 }
 
 void main() {
@@ -248,6 +308,18 @@ void main() {
     // Noise texture
     float n = noise(vUv * 12.0 + uTime * 0.3);
     color *= (0.85 + 0.15 * n);
+
+    float bore = 0.0;
+    float rim = 0.0;
+    float wave = 0.0;
+    applyShot(uShot0, uShotPower.x, bore, rim, wave);
+    applyShot(uShot1, uShotPower.y, bore, rim, wave);
+    applyShot(uShot2, uShotPower.z, bore, rim, wave);
+    applyShot(uShot3, uShotPower.w, bore, rim, wave);
+
+    color *= 1.0 - bore * 0.88;
+    vec3 ballisticColor = normalize(uCoreColor + gasColor + vec3(0.10, 0.06, 0.03));
+    color += ballisticColor * (rim * 1.6 + wave * 0.45) * (0.75 + uMid * 0.7);
 
     // Central light core — pulses hard with bass
     float dist = distance(vUv, vec2(0.5));
@@ -341,6 +413,7 @@ function program(frag) {
 const programs = {
     clear: program(clearFrag),
     splat: program(splatFrag),
+    carve: program(carveFrag),
     advection: program(advectionFrag),
     divergence: program(divergenceFrag),
     curl: program(curlFrag),
@@ -473,6 +546,18 @@ function splat(buf, x, y, dx, dy, dz, radius) {
     target(buf.write); draw(); buf.swap();
 }
 
+function carve(buf, x, y, dx, dy, radius, length, strength) {
+    bindProgram(programs.carve);
+    bindTex(programs.carve.uniforms.uTarget, buf.read.tex, 0);
+    gl.uniform2f(programs.carve.uniforms.uPoint, x, y);
+    gl.uniform2f(programs.carve.uniforms.uDirection, dx, dy);
+    gl.uniform1f(programs.carve.uniforms.uRadius, radius);
+    gl.uniform1f(programs.carve.uniforms.uLength, length);
+    gl.uniform1f(programs.carve.uniforms.uStrength, strength);
+    gl.uniform1f(programs.carve.uniforms.uAspect, W / H);
+    target(buf.write); draw(); buf.swap();
+}
+
 function advect(buf, src, dt, dissipation) {
     bindProgram(programs.advection);
     bindTex(programs.advection.uniforms.uVelocity, velocity.read.tex, 0);
@@ -536,6 +621,11 @@ function step(dt) {
 
 // ==================== AUDIO INJECTION ====================
 
+function recordShot(x, y, angle, power) {
+    activeShots.unshift({ x, y, angle, power, born: time });
+    activeShots = activeShots.slice(0, 4);
+}
+
 function injectAudioForces() {
     const react = Number(ctrlReact.value);
     const noiseAmt = Number(ctrlNoise.value) * 0.01;
@@ -573,26 +663,51 @@ function injectAudioForces() {
         }
     }
 
-    // Sniper Shot on beat (Shoots a high-speed bullet through the gas)
+    // Rifle shot on beat: carve a tunnel, then make the pressure field roll around it.
     const bombStr = Number(ctrlBomb.value);
     if (bombTriggered && bombStr > 0) {
-        bombTriggered = false; // Consume trigger
-        
-        // Random impact point
-        const bx = 0.2 + Math.random() * 0.6;
-        const by = 0.2 + Math.random() * 0.6;
-        
-        // Bullet characteristics: very small radius, extreme velocity
-        const bulletRadius = 0.005 * (0.8 + bombStr * 0.2);
-        const bulletForce = (80.0 + bass * 40.0) * bombStr;
+        bombTriggered = false;
 
-        // Random trajectory angle
+        const bx = 0.32 + Math.random() * 0.36;
+        const by = 0.30 + Math.random() * 0.40;
         const ang = Math.random() * Math.PI * 2;
-        
-        // Ditembak pake senapan (Sniper shot): 
-        // A single extreme directional force. This punches a hole at the impact point 
-        // and drags the gas into beautiful trailing vortices (fluid dynamics) along its path.
-        splat(velocity, bx, by, Math.cos(ang) * bulletForce, Math.sin(ang) * bulletForce, 0, bulletRadius);
+        const dirX = Math.cos(ang);
+        const dirY = Math.sin(ang);
+        const nX = -dirY;
+        const nY = dirX;
+        const shotPower = Math.min(1.6, (0.75 + bass * 1.6) * bombStr);
+        const bulletForce = (12.0 + bass * 18.0) * shotPower;
+        const tunnelRadius = 0.00026 + shotPower * 0.00012;
+        const tunnelLength = 0.62 + shotPower * 0.07;
+
+        recordShot(bx, by, ang, shotPower);
+
+        for (const layer of layers) {
+            carve(layer, bx, by, dirX, dirY, tunnelRadius, tunnelLength, 0.82 + shotPower * 0.10);
+        }
+
+        for (let i = -9; i <= 9; i++) {
+            const t = i / 9;
+            const falloff = Math.exp(-Math.abs(t) * 1.6);
+            const x = bx + dirX * t * tunnelLength * 0.5;
+            const y = by + dirY * t * tunnelLength * 0.5;
+            if (x < 0.02 || x > 0.98 || y < 0.02 || y > 0.98) continue;
+
+            splat(velocity, x, y, dirX * bulletForce * falloff, dirY * bulletForce * falloff, 0, 0.0028 + falloff * 0.003);
+
+            const spin = (i % 2 === 0 ? 1 : -1) * bulletForce * 0.32 * falloff;
+            splat(velocity, x + nX * 0.018, y + nY * 0.018, nX * spin, nY * spin, 0, 0.004);
+            splat(velocity, x - nX * 0.018, y - nY * 0.018, -nX * spin, -nY * spin, 0, 0.004);
+        }
+
+        for (let i = 0; i < 20; i++) {
+            const a = (i / 20) * Math.PI * 2;
+            const waveX = Math.cos(a);
+            const waveY = Math.sin(a);
+            const r = 0.025 + Math.random() * 0.018;
+            splat(velocity, bx + waveX * r, by + waveY * r, waveX * bulletForce * 0.45, waveY * bulletForce * 0.45, 0, 0.0045);
+            splat(layers[i % 3], bx + waveX * r, by + waveY * r, 0.055 * shotPower, 0, 0, 0.0035);
+        }
     }
 }
 
@@ -622,6 +737,26 @@ function render() {
     gl.uniform1f(prg.uniforms.uTreble, treble);
     gl.uniform1f(prg.uniforms.uCoreBrightness, Number(ctrlCore.value));
     gl.uniform1f(prg.uniforms.uTime, time);
+    gl.uniform1f(prg.uniforms.uAspect, W / H);
+
+    activeShots = activeShots.filter(shot => time - shot.born < 2.8);
+    const shots = [];
+    const powers = [];
+    for (let i = 0; i < 4; i++) {
+        const shot = activeShots[i];
+        if (shot) {
+            shots.push([shot.x, shot.y, shot.angle, time - shot.born]);
+            powers.push(shot.power);
+        } else {
+            shots.push([0, 0, 0, -1]);
+            powers.push(0);
+        }
+    }
+    gl.uniform4f(prg.uniforms.uShot0, shots[0][0], shots[0][1], shots[0][2], shots[0][3]);
+    gl.uniform4f(prg.uniforms.uShot1, shots[1][0], shots[1][1], shots[1][2], shots[1][3]);
+    gl.uniform4f(prg.uniforms.uShot2, shots[2][0], shots[2][1], shots[2][2], shots[2][3]);
+    gl.uniform4f(prg.uniforms.uShot3, shots[3][0], shots[3][1], shots[3][2], shots[3][3]);
+    gl.uniform4f(prg.uniforms.uShotPower, powers[0], powers[1], powers[2], powers[3]);
     target(renderBuffer); draw();
 
     // Pass 2 — God Rays
@@ -675,6 +810,8 @@ function updateAudio() {
     if (useRealAudio && analyser) analyser.getFloatFrequencyData(dataArray);
     else simulatedAudio();
 
+    const prevBass = bass;
+
     for (let i = 0; i < BINS; i++) {
         const raw = Math.max(0, Math.min(1, (dataArray[logIndices[i] || 0] - MIN_DB) / (MAX_DB - MIN_DB)));
         // Snappy tracking — fast attack, moderate release
@@ -691,11 +828,11 @@ function updateAudio() {
     mid    = m > mid    ? mid    * 0.5 + m * 0.5 : mid    * 0.88 + m * 0.12;
     treble = t > treble ? treble * 0.5 + t * 0.5 : treble * 0.88 + t * 0.12;
 
-    // Lower beat threshold to catch more hits
-    const beatDelta = b - bass;
-    if (beatDelta > 0.06 && b > 0.03) {
+    const beatDelta = b - prevBass;
+    if (beatDelta > 0.045 && b > 0.06 && time - lastShotTime > 0.35) {
         beat = Math.min(1.5, 1.0 + beatDelta * 5.0);
         bombTriggered = true;
+        lastShotTime = time;
     }
     beat = Math.max(0, beat - 0.05);
 }

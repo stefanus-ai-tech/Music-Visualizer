@@ -50,22 +50,25 @@ canvas {
 }
 
 .title {
-    font-size: 80px;
+    font-size: 72px;
     font-weight: 700;
-    letter-spacing: 12px;
+    letter-spacing: 0;
     background: linear-gradient(to bottom, #ffffff 0%, #666666 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-right: -12px;
+    line-height: 0.95;
+    max-width: 720px;
 }
 
 .subtitle {
     font-size: 14px;
     font-weight: 300;
-    letter-spacing: 6px;
+    letter-spacing: 2px;
     color: var(--text-secondary);
     text-transform: uppercase;
     margin-bottom: 30px;
+    max-width: 620px;
+    line-height: 1.5;
 }
 
 #startBtn, #toggleUIBtn {
@@ -203,4 +206,33 @@ input[type=range]::-webkit-slider-thumb {
     z-index: 30;
     padding: 8px 16px;
     font-size: 10px;
+}
+
+@media (max-width: 720px) {
+    .overlay-inner {
+        padding: 28px;
+    }
+
+    .title {
+        font-size: 42px;
+        max-width: 320px;
+    }
+
+    .subtitle {
+        font-size: 11px;
+        max-width: 300px;
+    }
+
+    #controlsPanel {
+        width: calc(100vw - 32px);
+        left: 16px;
+        top: auto;
+        bottom: 16px;
+        transform: none;
+        max-height: 48vh;
+    }
+
+    #controlsPanel.hidden {
+        transform: translateY(16px);
+    }
 }
