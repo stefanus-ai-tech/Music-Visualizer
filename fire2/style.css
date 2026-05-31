@@ -1,0 +1,245 @@
+/* ============================================================
+   Burning Drum II — Stylesheet
+   Horizontal fire visualizer with glassmorphism dark UI
+   ============================================================ */
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #030304;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #e0e0e0;
+  user-select: none;
+}
+
+/* ---------- Canvas ---------- */
+#visualizer-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* ---------- Ambient Glow ---------- */
+#ambient-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+  background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(255, 100, 20, 0.1) 0%, transparent 70%);
+}
+
+/* ---------- Controls Panel ---------- */
+#controls {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px;
+  background: rgba(8, 8, 12, 0.7);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ---------- Brand ---------- */
+#brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#brand-icon {
+  font-size: 1.25rem;
+  filter: drop-shadow(0 0 6px rgba(255, 80, 0, 0.6));
+}
+
+#brand-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, #ff8a30, #ff3e00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+}
+
+/* ---------- Start Button ---------- */
+#start-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: linear-gradient(135deg, #ff6a00, #ee0979);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+}
+
+#start-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 20px rgba(255, 70, 0, 0.45);
+}
+
+#start-btn:active {
+  transform: scale(0.97);
+}
+
+#start-btn.listening {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  cursor: default;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+#start-btn.listening:hover {
+  transform: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+/* EQ bars inside the button */
+#eq-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+
+#eq-bars.hidden {
+  display: none;
+}
+
+.eq-bar {
+  width: 3px;
+  background: #ff6a00;
+  border-radius: 1px;
+  animation: eq-bounce 0.75s ease-in-out infinite alternate;
+}
+
+.eq-bar:nth-child(1) { height: 35%;  animation-delay: 0s; }
+.eq-bar:nth-child(2) { height: 70%;  animation-delay: 0.12s; }
+.eq-bar:nth-child(3) { height: 50%;  animation-delay: 0.25s; }
+.eq-bar:nth-child(4) { height: 85%;  animation-delay: 0.4s; }
+
+@keyframes eq-bounce {
+  0%   { transform: scaleY(0.25); }
+  100% { transform: scaleY(1); }
+}
+
+/* ---------- Palette Selector ---------- */
+#palette-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#palette-label {
+  font-size: 0.76rem;
+  color: #777;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+#palette-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 6px 28px 6px 12px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #ddd;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+#palette-select:hover,
+#palette-select:focus {
+  border-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+#palette-select option {
+  background: #16161a;
+  color: #ddd;
+}
+
+/* ---------- Idle Prompt ---------- */
+#idle-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+  animation: idle-float 3.5s ease-in-out infinite;
+}
+
+#idle-prompt p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.28);
+  letter-spacing: 0.03em;
+}
+
+#idle-prompt p.sub {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.15);
+}
+
+#idle-prompt.hidden {
+  display: none;
+}
+
+@keyframes idle-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+  #controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 95vw;
+  }
+
+  #brand-title {
+    font-size: 0.82rem;
+  }
+}

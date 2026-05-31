@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Burning Drum II — Horizontal plasma fire music visualizer with multi-frequency band simulation.">
+  <title>Burning Drum II — Horizontal Fire</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Full-screen canvas for the particle system -->
+  <canvas id="visualizer-canvas"></canvas>
+
+  <!-- Ambient glow overlay (pulsated via JS) -->
+  <div id="ambient-glow"></div>
+
+  <!-- ===== UI Controls ===== -->
+  <header id="controls">
+    <!-- Brand -->
+    <div id="brand">
+      <span id="brand-icon">🔥</span>
+      <h1 id="brand-title">Burning Drum II</h1>
+    </div>
+
+    <!-- Start / listening button -->
+    <button id="start-btn" type="button">
+      <span id="start-btn-label">Start Listening</span>
+      <span id="eq-bars" class="hidden">
+        <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+      </span>
+    </button>
+
+    <!-- Color palette selector -->
+    <div id="palette-group">
+      <label for="palette-select" id="palette-label">Palette</label>
+      <select id="palette-select">
+        <option value="classic" selected>🟠 Classic</option>
+        <option value="ghost">🔵 Ghost Fire</option>
+        <option value="cursed">🟣 Cursed Fire</option>
+        <option value="mono">⚪ Monochrome</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Idle prompt -->
+  <div id="idle-prompt">
+    <p>Click <strong>Start Listening</strong> to ignite the fire</p>
+    <p class="sub">Play music on your system — the visualizer captures system audio</p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

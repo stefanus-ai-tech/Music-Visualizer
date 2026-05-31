@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Burning Drum — a 2D music visualizer that transforms audio beats into mesmerizing fire particle effects on an HTML5 Canvas.">
+  <title>Burning Drum — Music Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Full-screen canvas for the particle system -->
+  <canvas id="visualizer-canvas"></canvas>
+
+  <!-- Ambient glow overlay rendered behind the UI -->
+  <div id="ambient-glow"></div>
+
+  <!-- ===== UI Controls ===== -->
+  <div id="controls">
+
+    <!-- Logo / Title -->
+    <div id="brand">
+      <span id="brand-icon">🔥</span>
+      <h1 id="brand-title">Burning Drum</h1>
+    </div>
+
+    <!-- File upload -->
+    <label id="upload-label" for="audio-upload">
+      <span id="upload-icon">⬆</span>
+      <span id="upload-text">Upload Audio</span>
+    </label>
+    <input type="file" id="audio-upload" accept="audio/*" />
+
+    <!-- Now-playing indicator -->
+    <div id="now-playing" class="hidden">
+      <span id="eq-bars">
+        <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+      </span>
+      <span id="track-name">Track</span>
+    </div>
+
+    <!-- Color palette selector -->
+    <div id="palette-group">
+      <label for="palette-select" id="palette-label">Palette</label>
+      <select id="palette-select">
+        <option value="classic" selected>🟠 Classic</option>
+        <option value="ghost">🔵 Ghost Fire</option>
+        <option value="cursed">🟣 Cursed Fire</option>
+        <option value="mono">⚪ Monochrome</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Prompt shown before audio is loaded -->
+  <div id="idle-prompt">
+    <p>Upload an audio file to ignite the drum</p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
