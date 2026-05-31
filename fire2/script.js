@@ -683,7 +683,14 @@ class Particle {
   }
 
   getColor(palette) {
-    const t = 1 - this.life;
+    const n = Math.round(CFG.bandCount) || 1;
+    // t_band: 0 = band teratas (AIR), 1 = band terbawah (SUB)
+    const t_band = 1 - (this.bandIdx + 0.5) / n;
+    // t_life: pengaruh penuaan tetap ada tapi dikurangin bobotnya
+    const t_life = 1 - this.life;
+    // Gabungin: 70% dari posisi band, 30% dari life
+    const t = t_band * 0.7 + t_life * 0.3;
+
     const idx = Math.min(t * (palette.length - 1), palette.length - 1.001);
     const i = Math.floor(idx);
     const f = idx - i;
@@ -875,13 +882,16 @@ function detectBeats(now) {
 // ───────────────────────────────────────────────────
 function drawEmitterRings() {
   const palette = PALETTES[currentPalette];
-  const baseCol = tintColor(palette[1]);
   const n = Math.round(CFG.bandCount);
 
   ctx.globalCompositeOperation = 'lighter';
 
   for (let b = 0; b < n; b++) {
     if (ringPulse[b] < 0.01) continue;
+    
+    const t = 1 - (b + 0.5) / n;
+    const bandColIdx = Math.min(Math.floor(t * (palette.length - 1)), palette.length - 2);
+    const baseCol = tintColor(palette[bandColIdx]);
     const ey = bandY(b);
     const radius = 18 + ringPulse[b] * CFG.ringSize;
     const alpha = ringPulse[b] * CFG.ringOpacity;
@@ -951,10 +961,13 @@ function drawBandLabels() {
   ctx.textAlign = 'right';
 
   const palette = PALETTES[currentPalette];
-  const col = tintColor(palette[2]);
   const n = Math.round(CFG.bandCount);
 
   for (let b = 0; b < n; b++) {
+    const t = 1 - (b + 0.5) / n;
+    const bandColIdx = Math.min(Math.floor(t * (palette.length - 1)), palette.length - 2);
+    const col = tintColor(palette[bandColIdx]);
+    
     const ey = bandY(b);
     const energy = bandValues[b] || 0;
     const alpha = (0.1 + energy * 0.25) * CFG.bandLabels;

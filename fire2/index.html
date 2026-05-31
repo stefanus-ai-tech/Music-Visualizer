@@ -3,27 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Burning Drum II — Horizontal plasma fire music visualizer with multi-frequency band simulation.">
+  <meta name="description" content="Burning Drum II — Horizontal plasma fire music visualizer with full customization controls.">
   <title>Burning Drum II — Horizontal Fire</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Full-screen canvas for the particle system -->
+  <!-- Full-screen canvas -->
   <canvas id="visualizer-canvas"></canvas>
 
-  <!-- Ambient glow overlay (pulsated via JS) -->
+  <!-- Ambient glow overlay -->
   <div id="ambient-glow"></div>
 
-  <!-- ===== UI Controls ===== -->
-  <header id="controls">
-    <!-- Brand -->
-    <div id="brand">
+  <!-- Idle prompt -->
+  <div id="idle-prompt">
+    <div class="idle-inner">
+      <div class="idle-icon">🔥</div>
+      <p class="idle-main">Click <strong>Start Listening</strong> to ignite</p>
+      <p class="idle-sub">Play music on your system — the visualizer captures system audio</p>
+    </div>
+  </div>
+
+  <!-- ===== Bottom Dock ===== -->
+  <nav id="dock">
+    <div id="dock-brand">
       <span id="brand-icon">🔥</span>
-      <h1 id="brand-title">Burning Drum II</h1>
+      <span id="brand-title">Burning Drum II</span>
     </div>
 
-    <!-- Start / listening button -->
+    <div id="dock-divider"></div>
+
     <button id="start-btn" type="button">
       <span id="start-btn-label">Start Listening</span>
       <span id="eq-bars" class="hidden">
@@ -31,7 +43,8 @@
       </span>
     </button>
 
-    <!-- Color palette selector -->
+    <div id="dock-divider"></div>
+
     <div id="palette-group">
       <label for="palette-select" id="palette-label">Palette</label>
       <select id="palette-select">
@@ -41,13 +54,372 @@
         <option value="mono">⚪ Monochrome</option>
       </select>
     </div>
-  </header>
 
-  <!-- Idle prompt -->
-  <div id="idle-prompt">
-    <p>Click <strong>Start Listening</strong> to ignite the fire</p>
-    <p class="sub">Play music on your system — the visualizer captures system audio</p>
-  </div>
+    <button id="settings-toggle" type="button" title="Customization Panel">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+  </nav>
+
+  <!-- ===== Settings Overlay ===== -->
+  <div id="settings-backdrop" class="hidden"></div>
+
+  <aside id="settings-panel" class="closed">
+    <div id="settings-header">
+      <h2 id="settings-title">⚙ Customization</h2>
+      <button id="settings-close" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div id="settings-scroll">
+
+      <!-- ── Particles ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="particles">
+          <span class="group-icon">●</span> Particles <span class="chevron">▾</span>
+        </button>
+        <div class="group-body" id="group-particles">
+          <div class="slider-row">
+            <label>Burst Count</label>
+            <input type="range" id="sl-burst-count" min="5" max="200" value="55" step="1">
+            <span class="slider-val" data-for="sl-burst-count">55</span>
+          </div>
+          <div class="slider-row">
+            <label>Max Particles</label>
+            <input type="range" id="sl-max-particles" min="500" max="10000" value="6000" step="100">
+            <span class="slider-val" data-for="sl-max-particles">6000</span>
+          </div>
+          <div class="slider-row">
+            <label>Ambient Rate</label>
+            <input type="range" id="sl-ambient-rate" min="0" max="8" value="2.5" step="0.1">
+            <span class="slider-val" data-for="sl-ambient-rate">2.5</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Spawn Weights ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="spawn">
+          <span class="group-icon">◆</span> Spawn Mix <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-spawn">
+          <div class="slider-row">
+            <label>Core Plasma %</label>
+            <input type="range" id="sl-weight-core" min="0" max="100" value="25" step="1">
+            <span class="slider-val" data-for="sl-weight-core">25</span>
+          </div>
+          <div class="slider-row">
+            <label>Ember %</label>
+            <input type="range" id="sl-weight-ember" min="0" max="100" value="30" step="1">
+            <span class="slider-val" data-for="sl-weight-ember">30</span>
+          </div>
+          <div class="slider-row">
+            <label>Smoke %</label>
+            <input type="range" id="sl-weight-smoke" min="0" max="100" value="23" step="1">
+            <span class="slider-val" data-for="sl-weight-smoke">23</span>
+          </div>
+          <div class="slider-row">
+            <label>Spark %</label>
+            <input type="range" id="sl-weight-spark" min="0" max="100" value="22" step="1">
+            <span class="slider-val" data-for="sl-weight-spark">22</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Particle Sizes ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="sizes">
+          <span class="group-icon">○</span> Particle Sizes <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-sizes">
+          <div class="slider-row">
+            <label>Core Size</label>
+            <input type="range" id="sl-size-core" min="1" max="18" value="7" step="0.5">
+            <span class="slider-val" data-for="sl-size-core">7</span>
+          </div>
+          <div class="slider-row">
+            <label>Ember Size</label>
+            <input type="range" id="sl-size-ember" min="1" max="12" value="4.5" step="0.5">
+            <span class="slider-val" data-for="sl-size-ember">4.5</span>
+          </div>
+          <div class="slider-row">
+            <label>Smoke Size</label>
+            <input type="range" id="sl-size-smoke" min="1" max="14" value="5" step="0.5">
+            <span class="slider-val" data-for="sl-size-smoke">5</span>
+          </div>
+          <div class="slider-row">
+            <label>Spark Size</label>
+            <input type="range" id="sl-size-spark" min="0.2" max="5" value="1.5" step="0.1">
+            <span class="slider-val" data-for="sl-size-spark">1.5</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Physics ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="physics">
+          <span class="group-icon">↔</span> Physics <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-physics">
+          <div class="slider-row">
+            <label>Horizontal Speed</label>
+            <input type="range" id="sl-h-speed" min="0.2" max="14" value="4" step="0.1">
+            <span class="slider-val" data-for="sl-h-speed">4</span>
+          </div>
+          <div class="slider-row">
+            <label>Vertical Spread</label>
+            <input type="range" id="sl-v-spread" min="0" max="8" value="2" step="0.1">
+            <span class="slider-val" data-for="sl-v-spread">2</span>
+          </div>
+          <div class="slider-row">
+            <label>Turbulence</label>
+            <input type="range" id="sl-turbulence" min="0" max="3" value="0.35" step="0.01">
+            <span class="slider-val" data-for="sl-turbulence">0.35</span>
+          </div>
+          <div class="slider-row">
+            <label>Heat Convection</label>
+            <input type="range" id="sl-convection" min="0" max="0.6" value="0.06" step="0.005">
+            <span class="slider-val" data-for="sl-convection">0.06</span>
+          </div>
+          <div class="slider-row">
+            <label>Velocity Damping</label>
+            <input type="range" id="sl-damping" min="0.9" max="1" value="0.99" step="0.002">
+            <span class="slider-val" data-for="sl-damping">0.99</span>
+          </div>
+          <div class="slider-row">
+            <label>Size Pulsation</label>
+            <input type="range" id="sl-pulse" min="0" max="0.4" value="0.08" step="0.01">
+            <span class="slider-val" data-for="sl-pulse">0.08</span>
+          </div>
+          <div class="slider-row">
+            <label>Spawn Spread X</label>
+            <input type="range" id="sl-spawn-spread-x" min="0" max="100" value="30" step="1">
+            <span class="slider-val" data-for="sl-spawn-spread-x">30</span>
+          </div>
+          <div class="slider-row">
+            <label>Spawn Spread Y</label>
+            <input type="range" id="sl-spawn-spread-y" min="0" max="60" value="12" step="1">
+            <span class="slider-val" data-for="sl-spawn-spread-y">12</span>
+          </div>
+          <div class="slider-row">
+            <label>Gravity</label>
+            <input type="range" id="sl-gravity" min="-0.3" max="0.3" value="0" step="0.005">
+            <span class="slider-val" data-for="sl-gravity">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Lifecycle ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="lifecycle">
+          <span class="group-icon">⏱</span> Lifecycle <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-lifecycle">
+          <div class="slider-row">
+            <label>Core Decay</label>
+            <input type="range" id="sl-decay-core" min="0.003" max="0.06" value="0.024" step="0.001">
+            <span class="slider-val" data-for="sl-decay-core">0.024</span>
+          </div>
+          <div class="slider-row">
+            <label>Ember Decay</label>
+            <input type="range" id="sl-decay-ember" min="0.002" max="0.04" value="0.011" step="0.001">
+            <span class="slider-val" data-for="sl-decay-ember">0.011</span>
+          </div>
+          <div class="slider-row">
+            <label>Smoke Decay</label>
+            <input type="range" id="sl-decay-smoke" min="0.001" max="0.025" value="0.005" step="0.001">
+            <span class="slider-val" data-for="sl-decay-smoke">0.005</span>
+          </div>
+          <div class="slider-row">
+            <label>Spark Decay</label>
+            <input type="range" id="sl-decay-spark" min="0.008" max="0.1" value="0.042" step="0.001">
+            <span class="slider-val" data-for="sl-decay-spark">0.042</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Beat Detection ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="beat">
+          <span class="group-icon">♫</span> Beat Detection <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-beat">
+          <div class="slider-row">
+            <label>Threshold</label>
+            <input type="range" id="sl-beat-threshold" min="0.05" max="0.95" value="0.45" step="0.01">
+            <span class="slider-val" data-for="sl-beat-threshold">0.45</span>
+          </div>
+          <div class="slider-row">
+            <label>Cooldown (ms)</label>
+            <input type="range" id="sl-beat-cooldown" min="10" max="500" value="80" step="5">
+            <span class="slider-val" data-for="sl-beat-cooldown">80</span>
+          </div>
+          <div class="slider-row">
+            <label>Peak Sensitivity</label>
+            <input type="range" id="sl-peak-sens" min="1" max="2.5" value="1.35" step="0.05">
+            <span class="slider-val" data-for="sl-peak-sens">1.35</span>
+          </div>
+          <div class="slider-row">
+            <label>Peak Tracking</label>
+            <input type="range" id="sl-peak-track" min="0.9" max="0.999" value="0.97" step="0.001">
+            <span class="slider-val" data-for="sl-peak-track">0.97</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Rendering ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="render">
+          <span class="group-icon">✦</span> Rendering <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-render">
+          <div class="slider-row">
+            <label>Motion Trail</label>
+            <input type="range" id="sl-trail" min="0.01" max="0.6" value="0.15" step="0.01">
+            <span class="slider-val" data-for="sl-trail">0.15</span>
+          </div>
+          <div class="slider-row">
+            <label>Outer Glow</label>
+            <input type="range" id="sl-outer-glow" min="0" max="0.25" value="0.06" step="0.005">
+            <span class="slider-val" data-for="sl-outer-glow">0.06</span>
+          </div>
+          <div class="slider-row">
+            <label>Core Opacity</label>
+            <input type="range" id="sl-core-opacity" min="0.05" max="1" value="0.45" step="0.01">
+            <span class="slider-val" data-for="sl-core-opacity">0.45</span>
+          </div>
+          <div class="slider-row">
+            <label>Hot Center</label>
+            <input type="range" id="sl-center-bright" min="0" max="1" value="0.9" step="0.01">
+            <span class="slider-val" data-for="sl-center-bright">0.9</span>
+          </div>
+          <div class="slider-row">
+            <label>Smoke Opacity</label>
+            <input type="range" id="sl-smoke-opacity" min="0.01" max="0.3" value="0.08" step="0.005">
+            <span class="slider-val" data-for="sl-smoke-opacity">0.08</span>
+          </div>
+          <div class="slider-row">
+            <label>Spark Glow</label>
+            <input type="range" id="sl-spark-glow" min="0.05" max="0.8" value="0.3" step="0.01">
+            <span class="slider-val" data-for="sl-spark-glow">0.3</span>
+          </div>
+          <div class="slider-row">
+            <label>Glow Radius</label>
+            <input type="range" id="sl-glow-radius" min="1" max="6" value="3" step="0.1">
+            <span class="slider-val" data-for="sl-glow-radius">3</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Emitter Visuals ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="emitter">
+          <span class="group-icon">◎</span> Emitter Visuals <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-emitter">
+          <div class="slider-row">
+            <label>Ring Size</label>
+            <input type="range" id="sl-ring-size" min="5" max="100" value="35" step="1">
+            <span class="slider-val" data-for="sl-ring-size">35</span>
+          </div>
+          <div class="slider-row">
+            <label>Ring Opacity</label>
+            <input type="range" id="sl-ring-opacity" min="0" max="1" value="0.35" step="0.01">
+            <span class="slider-val" data-for="sl-ring-opacity">0.35</span>
+          </div>
+          <div class="slider-row">
+            <label>Ring Decay</label>
+            <input type="range" id="sl-ring-decay" min="0.8" max="0.99" value="0.9" step="0.005">
+            <span class="slider-val" data-for="sl-ring-decay">0.9</span>
+          </div>
+          <div class="slider-row">
+            <label>Center Column</label>
+            <input type="range" id="sl-center-col" min="0" max="1" value="1" step="0.01">
+            <span class="slider-val" data-for="sl-center-col">1</span>
+          </div>
+          <div class="slider-row">
+            <label>Ambient Glow</label>
+            <input type="range" id="sl-ambient-glow" min="0" max="1" value="0.5" step="0.01">
+            <span class="slider-val" data-for="sl-ambient-glow">0.5</span>
+          </div>
+          <div class="slider-row">
+            <label>Band Labels</label>
+            <input type="range" id="sl-band-labels" min="0" max="1" value="1" step="0.01">
+            <span class="slider-val" data-for="sl-band-labels">1</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Colour Tweaks ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="colour">
+          <span class="group-icon">🎨</span> Colour Tweaks <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-colour">
+          <div class="slider-row">
+            <label>Hue Shift</label>
+            <input type="range" id="sl-hue-shift" min="-180" max="180" value="0" step="1">
+            <span class="slider-val" data-for="sl-hue-shift">0</span>
+          </div>
+          <div class="slider-row">
+            <label>Saturation Boost</label>
+            <input type="range" id="sl-sat-boost" min="-50" max="50" value="0" step="1">
+            <span class="slider-val" data-for="sl-sat-boost">0</span>
+          </div>
+          <div class="slider-row">
+            <label>Lightness Boost</label>
+            <input type="range" id="sl-light-boost" min="-40" max="40" value="0" step="1">
+            <span class="slider-val" data-for="sl-light-boost">0</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Audio ── -->
+      <section class="setting-group">
+        <button class="group-toggle" type="button" data-group="audio">
+          <span class="group-icon">🎧</span> Audio <span class="chevron">▾</span>
+        </button>
+        <div class="group-body collapsed" id="group-audio">
+          <div class="slider-row">
+            <label>FFT Smoothing</label>
+            <input type="range" id="sl-fft-smooth" min="0" max="0.95" value="0.55" step="0.01">
+            <span class="slider-val" data-for="sl-fft-smooth">0.55</span>
+          </div>
+          <div class="slider-row">
+            <label>Freq Min (Hz)</label>
+            <input type="range" id="sl-freq-min" min="10" max="500" value="20" step="5">
+            <span class="slider-val" data-for="sl-freq-min">20</span>
+          </div>
+          <div class="slider-row">
+            <label>Freq Max (Hz)</label>
+            <input type="range" id="sl-freq-max" min="2000" max="20000" value="16000" step="100">
+            <span class="slider-val" data-for="sl-freq-max">16000</span>
+          </div>
+          <div class="slider-row">
+            <label>Band Count</label>
+            <input type="range" id="sl-band-count" min="2" max="16" value="8" step="1">
+            <span class="slider-val" data-for="sl-band-count">8</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Presets / Reset ── -->
+      <section class="setting-group">
+        <div class="preset-row">
+          <button class="preset-btn" id="btn-preset-inferno" type="button">🌋 Inferno</button>
+          <button class="preset-btn" id="btn-preset-ethereal" type="button">✨ Ethereal</button>
+          <button class="preset-btn" id="btn-preset-chaos" type="button">💥 Chaos</button>
+          <button class="preset-btn" id="btn-preset-minimal" type="button">🌑 Minimal</button>
+        </div>
+        <div class="preset-row" style="margin-top:6px">
+          <button class="preset-btn reset-btn" id="btn-reset" type="button">↺ Reset All</button>
+        </div>
+      </section>
+
+    </div>
+  </aside>
 
   <script src="script.js"></script>
 </body>
